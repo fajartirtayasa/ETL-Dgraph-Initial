@@ -1,0 +1,16 @@
+trigger:
+  branches:
+    include:
+    - gar-dev
+    - gar-stg
+    - gar-prd-1
+
+variables:
+- name: imageTag
+  value: '$(Build.BuildId)'
+
+stages:
+- template: stages/build.yml
+- template: stages/dev.yml
+- template: stages/stg.yml
+- template: stages/prd-1.yml

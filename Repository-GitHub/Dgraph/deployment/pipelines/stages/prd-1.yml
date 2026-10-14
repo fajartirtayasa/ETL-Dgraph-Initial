@@ -1,0 +1,29 @@
+stages:
+- stage: BuildAndPublishECRPrd1
+  displayName: 'Build and Publish Image to ECR Prd 1'
+  dependsOn: Build
+  condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/gar-prd-1'))
+  variables:
+    - group: trace-dgraph-etl-prd-1
+  jobs:
+  - deployment: BuildAndPublishECRPrd1
+    displayName: 'Build and Publish Image to ECR Prd 1'
+    environment: 'prd-1'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: DockerBuildContext
+            displayName: 'Download Docker Build Context'
+
+          - template: ../templates/publish-template.yml
+            parameters:
+              AwsServiceConnection: 'aws-gar-trace-be'
+              AwsRegion: '$(AWS_REGION)'
+              AwsAccountId: '$(AWS_ACCOUNT_ID)'
+              AwsEcrRepoName: '$(AWS_ECR_REPO_NAME)'
+              ImageTag: '$(imageTag)'
+              DockerFilePath: '$(DOCKER_FILE_PATH)'

@@ -1,0 +1,91 @@
+unique_id: string @index(exact, hash, trigram) @upsert .
+client_id: string .
+bl_number: string .
+sales_order: string .
+product_id: string .
+product_name: string .
+plant: string .
+production_label: string .
+process_date: int .
+material_type: string .
+material_code: string @index(hash, trigram) .
+amount: float .
+unit: string .
+src_path: string .
+sub_data_source: string .
+version: string .
+flag: string .
+material_document: string .
+purchase_order: string .
+uml_id: string .
+mill_id: string .
+location_id: string .
+vendor: string .
+source: string .
+location_subject_type: string .
+location_master_id: string .
+location_master_type: string .
+location_facility_subject_id: string .
+location_facility_subject_type: string .
+location_facility_master_id: string .
+location_facility_master_type: string .
+source_subject_type: string .
+source_master_id: string .
+source_master_type: string .
+source_facility_subject_id: string .
+source_facility_subject_type: string .
+source_facility_master_id: string .
+source_facility_master_type: string .
+movement_type: string .
+movement_type_text: string .
+storage_location: string .
+partner_pca: string .
+mill_name: string .
+links: [uid] @reverse .
+
+type Event {
+  unique_id
+  client_id
+  bl_number
+  sales_order
+  product_id
+  product_name
+  plant
+  production_label
+  process_date
+  material_type
+  material_code
+  amount
+  unit
+  src_path
+  sub_data_source
+  version
+  flag
+  material_document
+  purchase_order
+  uml_id
+  mill_id
+  location_id
+  vendor
+  source
+  location_subject_type
+  location_master_id
+  location_master_type
+  location_facility_subject_id
+  location_facility_subject_type
+  location_facility_master_id
+  location_facility_master_type
+  source_subject_type
+  source_master_id
+  source_master_type
+  source_facility_subject_id
+  source_facility_subject_type
+  source_facility_master_id
+  source_facility_master_type
+  movement_type
+  movement_type_text
+  storage_location
+  partner_pca
+  mill_name
+  links
+}
