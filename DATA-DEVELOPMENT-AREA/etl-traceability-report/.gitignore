@@ -1,3 +1,0 @@
-# Ignore Python bytecode cache directories
-__pycache__/*
-src/__pycache__/*

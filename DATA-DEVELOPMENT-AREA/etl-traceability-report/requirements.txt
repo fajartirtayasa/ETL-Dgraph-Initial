@@ -1,8 +1,0 @@
-#python libraries
-pandas
-pyyaml
-psycopg2-binary
-openpyxl
-boto3
-botocore
-pyfiglet
