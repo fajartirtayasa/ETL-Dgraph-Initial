@@ -1,0 +1,39 @@
+# syntax=docker/dockerfile:1.7
+
+##
+## Build stage
+##
+FROM golang:1.25.4-alpine AS builder
+
+ENV CGO_ENABLED=0
+ENV GOOS=linux
+ENV GOARCH=amd64
+ENV GO111MODULE=on
+
+WORKDIR /workspace
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN --mount=type=cache,target=/root/.cache/go-build \
+  --mount=type=cache,target=/go/pkg/mod \
+  go build -trimpath -ldflags="-s -w" -o /workspace/bin/traceability-dgrapg-etl .
+
+##
+## Runtime stage
+##
+FROM gcr.io/distroless/static-debian12:nonroot
+
+WORKDIR /app
+
+COPY --from=builder /workspace/bin/traceability-dgrapg-etl /app/traceability-dgrapg-etl
+COPY --from=builder /workspace/config /app/config
+COPY --from=builder /workspace/.env /app/.env
+COPY --from=builder /workspace/schema.dql /app/schema.dql
+
+EXPOSE 8080
+
+ENTRYPOINT ["/app/traceability-dgrapg-etl"]
+

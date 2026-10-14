@@ -1,0 +1,29 @@
+stages:
+- stage: BuildAndPublishECRDev
+  displayName: 'Build and Publish Image to ECR Dev'
+  dependsOn: Build
+  condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/gar-dev'))
+  variables:
+    - group: trace-dgraph-etl-dev
+  jobs:
+  - deployment: BuildAndPublishECRDev
+    displayName: 'Build and Publish Image to ECR Dev'
+    environment: 'dev'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: DockerBuildContext
+            displayName: 'Download Docker Build Context'
+
+          - template: ../templates/publish-template.yml
+            parameters:
+              AwsServiceConnection: 'aws-hara-trace-be-fe'
+              AwsRegion: '$(AWS_REGION)'
+              AwsAccountId: '$(AWS_ACCOUNT_ID)'
+              AwsEcrRepoName: '$(AWS_ECR_REPO_NAME)'
+              ImageTag: '$(imageTag)'
+              DockerFilePath: '$(DOCKER_FILE_PATH)'
