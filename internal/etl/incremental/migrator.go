@@ -79,11 +79,6 @@ func (m *Migrator) Run(ctx context.Context) error {
 		return fmt.Errorf("update sync times: %w", err)
 	}
 
-	// Refresh materialized views after ETL completes
-	if err := refreshMaterializedViews(ctx, m.db, m.log); err != nil {
-		return fmt.Errorf("refresh materialized views: %w", err)
-	}
-
 	m.log.Info("incremental migration completed")
 	return nil
 }

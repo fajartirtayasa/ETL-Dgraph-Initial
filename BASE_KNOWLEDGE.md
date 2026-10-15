@@ -109,7 +109,7 @@ Initial-mode defaults when unset: `workerCount = runtime.NumCPU()`, `chunkSize =
 | `mv_subject_hierarchy` | `start_subject_id`, `subject_id`, `subject_type`, `master_id`, `master_type` | Facility-level enrichment |
 | `master_mill` | `uml_id`, `mill_id` | `uml_id → mill_id` lookup (de-duplicated via `GROUP BY`) |
 | `traceability_log_daily` | `entry_date`, `status` | Upstream-ETL completion gate |
-| `mv_events`, `monitoring_cache_shipments`, `mv_shipment_list` | — | Materialized views refreshed after incremental runs |
+| `mv_events`, `monitoring_cache_shipments`, `mv_shipment_list` | — | Materialized views; refreshed by a separate Step Functions state, **not** by this ETL |
 
 `sync_time IS NULL` is the **change-data-capture watermark** for both `events_bc` and `links_bc`.
 
@@ -186,8 +186,8 @@ Finally `cleanupMissingLinks` strips `<links>` from every synced event that turn
 
 **This is the restartability mechanism**: stamping happens only after the graph mutations succeed, so a crashed run leaves `sync_time` NULL and the next run re-processes the same rows. Never stamp earlier.
 
-### 8.5 Materialized views — `materialized_views.go`
-`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_events`, then non-concurrent `monitoring_cache_shipments` and `mv_shipment_list`, sequentially, aborting on the first failure.
+### 8.5 Materialized views — out of scope
+The incremental ETL does not refresh materialized views. `mv_events`, `monitoring_cache_shipments` and `mv_shipment_list` are refreshed by a separate Step Functions state downstream of this task (`materialized_views.go` was removed).
 
 ### Incremental concurrency model
 `fanOutBatches[T]` (`helpers.go`) is the **only** concurrency primitive: a producer goroutine feeds an unbuffered job channel consumed by N workers, all under an `errgroup`. Every batch size and worker count it receives comes from config. The shared `uidMap` is an RWMutex-guarded map with `Get`/`Set`/`Merge`/`Values`. `stringSet` is a plain `map[string]struct{}` that silently drops empty strings and is **not** goroutine-safe — it is only used single-threaded.

@@ -69,7 +69,8 @@ Event nodes and link edges are joined purely by blank-node identity across the t
 2. `removal.go` — events/links marked `status = 'invalid'`, resolve `unique_id → uid`, `<uid> * * .` delete.
 3. `events.go` — events reachable from unsynced valid links, chunked by `FetchChunkSize`; per chunk: lookup uids → fetch details → upsert.
 4. `links.go` — same chunking but **keyed by `event1_id`**, then `sync_time` updates.
-5. `materialized_views.go` — `REFRESH MATERIALIZED VIEW` for `mv_events` (concurrently), `monitoring_cache_shipments`, `mv_shipment_list`.
+
+The ETL does **not** refresh materialized views. `mv_events`, `monitoring_cache_shipments` and `mv_shipment_list` are refreshed by a separate Step Functions state downstream of this task — do not reintroduce a `REFRESH MATERIALIZED VIEW` here.
 
 Invariants worth knowing before editing this package:
 
