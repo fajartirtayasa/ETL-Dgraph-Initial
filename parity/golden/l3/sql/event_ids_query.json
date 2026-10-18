@@ -1,0 +1,66 @@
+{
+  "format": "dgraph-etl-parity/golden/v1",
+  "kind": "l3.rowset",
+  "name": "l3/sql/event_ids_query",
+  "description": "event_ids_query (incremental/events.go:13-49) against the full synthetic fixture.",
+  "provenance": {
+    "generator_commit": "b487294e04cdb6fea5e49224364830e9762d2f58",
+    "baseline_commit": "b487294e04cdb6fea5e49224364830e9762d2f58",
+    "generated_by": "TestParityL3SQLRowsets",
+    "go_version": "go1.25.3"
+  },
+  "comparison": "set: `rows` compared as a multiset (they are stored sorted by their JSON encoding); SQL text must be byte-identical (`sql_sha256`); values are as scanned by the Go ETL (see `value_encoding`)",
+  "data": {
+    "columns": [
+      "unique_id"
+    ],
+    "params": {},
+    "query": "event_ids_query",
+    "rows": [
+      [
+        "SYN-S1-E01"
+      ],
+      [
+        "SYN-S1-E02"
+      ],
+      [
+        "SYN-S2-E01"
+      ],
+      [
+        "SYN-S4-E01"
+      ],
+      [
+        "SYN-S4-E02"
+      ],
+      [
+        "SYN-S5-E01"
+      ],
+      [
+        "SYN-S5-E02"
+      ],
+      [
+        "SYN-S5-E03"
+      ],
+      [
+        "SYN-S5-E04"
+      ],
+      [
+        "SYN-S6-E02"
+      ]
+    ],
+    "source": "incremental/events.go:13-49",
+    "sql": "WITH UnsyncedLinks AS (\n    SELECT event1_id, event2_id\n    FROM links_bc\n    WHERE sync_time IS NULL\n),\n\nValidUnsyncedLinks AS (\n    SELECT ul.event1_id AS unique_id\n    FROM UnsyncedLinks ul\n    JOIN events_bc e ON ul.event1_id = e.unique_id\n    WHERE e.status = 'valid'\n    UNION\n    SELECT ul.event2_id AS unique_id\n    FROM UnsyncedLinks ul\n    JOIN events_bc e ON ul.event2_id = e.unique_id\n    WHERE e.status = 'valid'\n),\n\nUnsyncedEvents AS (\n  SELECT e.unique_id\n  FROM events_bc e\n  WHERE e.sync_time IS NULL\n    AND e.status = 'valid'\n    AND EXISTS (\n        SELECT 1 FROM links_bc l\n        WHERE l.status = 'valid'\n              AND (l.event1_id = e.unique_id or l.event2_id = e.unique_id)\n    )\n),\n\nUnsyncedUniqueIDs AS (\n    SELECT unique_id FROM ValidUnsyncedLinks\n    UNION\n    SELECT unique_id FROM UnsyncedEvents\n)\n\nSELECT unique_id FROM UnsyncedUniqueIDs;",
+    "sql_sha256": "1c90427cce749bc7a8d5f65094f7983641e308ae20c24109e198698015777e1b",
+    "value_encoding": {
+      "columns": {
+        "unique_id": "string"
+      },
+      "rules": {
+        "nullfloat64": "JSON string holding the float64 value as Go strconv.FormatFloat(v,'f',-1,64), or null",
+        "nullint64": "JSON number, or null",
+        "nullstring": "JSON string, or null for SQL NULL; untrimmed, exactly as returned",
+        "string": "JSON string (column scanned as non-null text)"
+      }
+    }
+  }
+}

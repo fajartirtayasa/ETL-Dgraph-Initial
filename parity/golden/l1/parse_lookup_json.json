@@ -1,0 +1,46 @@
+{
+  "format": "dgraph-etl-parity/golden/v1",
+  "kind": "l1.cases",
+  "name": "l1/parse_lookup_json",
+  "description": "parseLookupJSON (incremental/helpers.go:83-96): unique_id -> uid from a lookup response.",
+  "provenance": {
+    "generator_commit": "b487294e04cdb6fea5e49224364830e9762d2f58",
+    "baseline_commit": "b487294e04cdb6fea5e49224364830e9762d2f58",
+    "generated_by": "TestParityL1ParseLookupJSON",
+    "go_version": "go1.25.3"
+  },
+  "comparison": "exact: for every case, the function's output must equal `expected` byte-for-byte (strings compared as Unicode text; see each file's notes for non-parity cases)",
+  "data": {
+    "cases": [
+      {
+        "input": "{\"nodes\":[{\"uid\":\"0x1\",\"unique_id\":\"SYN-A\"},{\"uid\":\"0x2\",\"unique_id\":\"SYN-B\"}]}",
+        "expected": {
+          "SYN-A": "0x1",
+          "SYN-B": "0x2"
+        }
+      },
+      {
+        "input": "{\"nodes\":[]}",
+        "expected": {}
+      },
+      {
+        "input": "{\"nodes\":[{\"uid\":\"\",\"unique_id\":\"SYN-A\"},{\"uid\":\"0x3\",\"unique_id\":\"\"}]}",
+        "expected": {},
+        "note": "entries missing either side are dropped"
+      },
+      {
+        "input": "{\"nodes\":[{\"uid\":\"0x1\",\"unique_id\":\"SYN-A\"},{\"uid\":\"0x9\",\"unique_id\":\"SYN-A\"}]}",
+        "expected": {
+          "SYN-A": "0x9"
+        },
+        "note": "duplicate unique_id: last wins"
+      },
+      {
+        "input": "not json",
+        "expected": {},
+        "note": "malformed JSON is swallowed and reads as 'not found' (helpers.go:85-87)"
+      }
+    ],
+    "function": "parseLookupJSON"
+  }
+}

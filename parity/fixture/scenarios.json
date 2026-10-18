@@ -1,0 +1,200 @@
+{
+  "format": "dgraph-etl-parity/scenarios/v1",
+  "description": "The seven P1-7 scenarios. Rows of scenario Sn are exactly the events_bc rows whose unique_id and the links_bc rows whose event1_id start with row_prefix; reference tables (subjects, mv_subject_hierarchy, master_mill) are shared. `expect` is derived by hand from the SQL and Go source, independently of the goldens; the L3 tests assert the Go implementation agrees with it.",
+  "scenarios": [
+    {
+      "id": "S1",
+      "key": "new_event",
+      "title": "New event",
+      "row_prefix": "SYN-S1-",
+      "description": "S1-E01 is valid, unsynced and absent from Dgraph; an unsynced valid link S1-E01 -> S1-E02 makes it eligible. It must be created through a blank node whose returned uid is then used by the link. Its values exercise string escaping (quotes, backslash, newline, non-ASCII), whitespace trimming, a NULL nullable column, a non-trivial jsonb src_path and a numeric beyond float64 precision.",
+      "expect": {
+        "event_ids_query": [
+          "SYN-S1-E01",
+          "SYN-S1-E02"
+        ],
+        "link_event1_ids_query": [
+          "SYN-S1-E01"
+        ],
+        "removal_query_link_ids": [],
+        "removal_query_unique_ids": [],
+        "sync_time_stamped_events": [
+          "SYN-S1-E01"
+        ],
+        "sync_time_stamped_links": [
+          910001
+        ],
+        "nodes_created": [
+          "SYN-S1-E01"
+        ],
+        "nodes_deleted": [],
+        "edges_after": [
+          "SYN-S1-E01->SYN-S1-E02"
+        ]
+      }
+    },
+    {
+      "id": "S2",
+      "key": "updated_event",
+      "title": "Updated event",
+      "row_prefix": "SYN-S2-",
+      "description": "S2-E01 is already in Dgraph and was updated in Postgres: one value changed, values cleared by NULL, by an empty string, by whitespace only and by an empty jsonb object, a join-derived value changed (uml_id -> mill_id) and a join-derived group cleared (location_id with no subject). Every cleared field must produce `<s> <p> *` in the same mutation as the sets.",
+      "expect": {
+        "event_ids_query": [
+          "SYN-S2-E01"
+        ],
+        "link_event1_ids_query": [
+          "SYN-S2-E01"
+        ],
+        "removal_query_link_ids": [],
+        "removal_query_unique_ids": [],
+        "sync_time_stamped_events": [
+          "SYN-S2-E01"
+        ],
+        "sync_time_stamped_links": [],
+        "nodes_created": [],
+        "nodes_deleted": [],
+        "edges_after": [
+          "SYN-S2-E01->SYN-S2-E02"
+        ]
+      }
+    },
+    {
+      "id": "S3",
+      "key": "invalidated_event",
+      "title": "Invalidated event",
+      "row_prefix": "SYN-S3-",
+      "description": "S3-E01 is in Dgraph and now status='invalid': the removal path must emit `<uid> * * .`. Its incoming edge (S3-E02 -> S3-E01) is removed by the links path rewriting S3-E02, which keeps S3-E02 -> S3-E03; its outgoing edge disappears with the node and is not resurrected. S3-E05 is invalid but was never loaded: no delete, still stamped.",
+      "expect": {
+        "event_ids_query": [],
+        "link_event1_ids_query": [
+          "SYN-S3-E01",
+          "SYN-S3-E02"
+        ],
+        "removal_query_link_ids": [],
+        "removal_query_unique_ids": [
+          "SYN-S3-E01",
+          "SYN-S3-E05"
+        ],
+        "sync_time_stamped_events": [
+          "SYN-S3-E01",
+          "SYN-S3-E05"
+        ],
+        "sync_time_stamped_links": [],
+        "nodes_created": [],
+        "nodes_deleted": [
+          "SYN-S3-E01"
+        ],
+        "edges_after": [
+          "SYN-S3-E02->SYN-S3-E03"
+        ]
+      }
+    },
+    {
+      "id": "S4",
+      "key": "link_added",
+      "title": "Link added",
+      "row_prefix": "SYN-S4-",
+      "description": "A new unsynced link S4-E01 -> S4-E02 joins two synced events. S4-E01 already has two links, so its whole link set is deleted and re-added (three links). The new link's facets exercise omission: NULL and empty versions and a whitespace-only role are omitted, while qty=0 is emitted.",
+      "expect": {
+        "event_ids_query": [
+          "SYN-S4-E01",
+          "SYN-S4-E02"
+        ],
+        "link_event1_ids_query": [
+          "SYN-S4-E01"
+        ],
+        "removal_query_link_ids": [],
+        "removal_query_unique_ids": [],
+        "sync_time_stamped_events": [],
+        "sync_time_stamped_links": [
+          940003
+        ],
+        "nodes_created": [],
+        "nodes_deleted": [],
+        "edges_after": [
+          "SYN-S4-E01->SYN-S4-E02",
+          "SYN-S4-E01->SYN-S4-E03",
+          "SYN-S4-E01->SYN-S4-E04"
+        ]
+      }
+    },
+    {
+      "id": "S5",
+      "key": "link_invalidated",
+      "title": "Link invalidated",
+      "row_prefix": "SYN-S5-",
+      "description": "Link S5-E01 -> S5-E02 is now status='invalid' and unsynced: removalQuery returns its id (stamp only) and the links path drops the edge while keeping S5-E01 -> S5-E03. Link S5-E04 -> S5-E03 has status NULL and is unsynced: removalQuery ignores it, but the links path drops its edge and stamps it.",
+      "expect": {
+        "event_ids_query": [
+          "SYN-S5-E01",
+          "SYN-S5-E02",
+          "SYN-S5-E03",
+          "SYN-S5-E04"
+        ],
+        "link_event1_ids_query": [
+          "SYN-S5-E01",
+          "SYN-S5-E04"
+        ],
+        "removal_query_link_ids": [
+          950001
+        ],
+        "removal_query_unique_ids": [],
+        "sync_time_stamped_events": [],
+        "sync_time_stamped_links": [
+          950001,
+          950003
+        ],
+        "nodes_created": [],
+        "nodes_deleted": [],
+        "edges_after": [
+          "SYN-S5-E01->SYN-S5-E03"
+        ]
+      }
+    },
+    {
+      "id": "S6",
+      "key": "event2_only_change",
+      "title": "Event2-only change",
+      "row_prefix": "SYN-S6-",
+      "description": "S6-E02 changed in Postgres and appears only as event2 (of the synced link S6-E01 -> S6-E02). It is upserted, and S6-E01 is pulled into the links path by linkEvent1IDsQuery's third UNION branch and rewritten.",
+      "expect": {
+        "event_ids_query": [
+          "SYN-S6-E02"
+        ],
+        "link_event1_ids_query": [
+          "SYN-S6-E01"
+        ],
+        "removal_query_link_ids": [],
+        "removal_query_unique_ids": [],
+        "sync_time_stamped_events": [
+          "SYN-S6-E02"
+        ],
+        "sync_time_stamped_links": [],
+        "nodes_created": [],
+        "nodes_deleted": [],
+        "edges_after": [
+          "SYN-S6-E01->SYN-S6-E02"
+        ]
+      }
+    },
+    {
+      "id": "S7",
+      "key": "event_without_links",
+      "title": "Event with no links",
+      "row_prefix": "SYN-S7-",
+      "description": "S7-E01 is new and S7-E02 is an updated in-graph event; neither has any link. eventIDsQuery requires a valid link, so neither is written to Dgraph and neither is stamped: both stay pending (sync_time NULL).",
+      "expect": {
+        "event_ids_query": [],
+        "link_event1_ids_query": [],
+        "removal_query_link_ids": [],
+        "removal_query_unique_ids": [],
+        "sync_time_stamped_events": [],
+        "sync_time_stamped_links": [],
+        "nodes_created": [],
+        "nodes_deleted": [],
+        "edges_after": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "format": "dgraph-etl-parity/golden/v1",
+  "kind": "l1.cases",
+  "name": "l1/build_cleanup_rdf",
+  "description": "buildCleanupRDF (incremental/graph_ops.go:106-115): one `<uid> <links> * .` per non-empty uid, joined by newline with no trailing newline. Used by deleteExistingLinks and cleanupMissingLinks.",
+  "provenance": {
+    "generator_commit": "b487294e04cdb6fea5e49224364830e9762d2f58",
+    "baseline_commit": "b487294e04cdb6fea5e49224364830e9762d2f58",
+    "generated_by": "TestParityL1BuildCleanupRDF",
+    "go_version": "go1.25.3"
+  },
+  "comparison": "exact: for every case, the function's output must equal `expected` byte-for-byte (strings compared as Unicode text; see each file's notes for non-parity cases)",
+  "data": {
+    "cases": [
+      {
+        "input": [],
+        "expected": ""
+      },
+      {
+        "input": [
+          "0x1"
+        ],
+        "expected": "<0x1> <links> * ."
+      },
+      {
+        "input": [
+          "0x1",
+          "",
+          "0x2"
+        ],
+        "expected": "<0x1> <links> * .\n<0x2> <links> * ."
+      },
+      {
+        "input": [
+          "0x2",
+          "0x1"
+        ],
+        "expected": "<0x2> <links> * .\n<0x1> <links> * ."
+      }
+    ],
+    "function": "buildCleanupRDF"
+  }
+}

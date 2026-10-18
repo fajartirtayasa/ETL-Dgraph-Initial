@@ -1,0 +1,28 @@
+# Synthetic parity fixture database (REFACTOR_PLAN.md P1-6). Rebuild with
+# parity/fixture/rebuild.sh. Data lives on tmpfs, so every recreate starts
+# from an empty cluster and replays sql/ in name order.
+#
+# Local only: bound to 127.0.0.1, trust auth, no credentials anywhere.
+name: dgraph-etl-parity
+
+services:
+  postgres:
+    # Staging RDS pg-trace-dev runs PostgreSQL 15.17 (P0 report, INV-8 Staging run).
+    image: postgres:15.17-bookworm
+    environment:
+      POSTGRES_DB: parity_fixture
+      POSTGRES_USER: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "127.0.0.1:55432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # TCP is only opened once the init scripts have finished, so a passing
+      # query here means the seed is fully loaded.
+      test: ["CMD", "psql", "-h", "127.0.0.1", "-U", "postgres", "-d", "parity_fixture", "-tAc", "SELECT count(*) FROM links_bc"]
+      interval: 1s
+      timeout: 5s
+      retries: 60

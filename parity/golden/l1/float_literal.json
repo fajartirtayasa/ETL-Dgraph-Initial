@@ -1,0 +1,109 @@
+{
+  "format": "dgraph-etl-parity/golden/v1",
+  "kind": "l1.cases",
+  "name": "l1/float_literal",
+  "description": "common.FloatLiteral (common/rdf.go:28-31), used for amount: strconv.FormatFloat(v, 'f', -1, 64) wrapped as an xsd:float typed literal. `input` is a decimal string parsed to the nearest IEEE-754 double.",
+  "provenance": {
+    "generator_commit": "b487294e04cdb6fea5e49224364830e9762d2f58",
+    "baseline_commit": "b487294e04cdb6fea5e49224364830e9762d2f58",
+    "generated_by": "TestParityL1FloatLiteral",
+    "go_version": "go1.25.3"
+  },
+  "comparison": "exact: for every case, the function's output must equal `expected` byte-for-byte (strings compared as Unicode text; see each file's notes for non-parity cases)",
+  "data": {
+    "cases": [
+      {
+        "input": "0",
+        "expected": "\"0\"^^<http://www.w3.org/2001/XMLSchema#float>"
+      },
+      {
+        "input": "-0",
+        "expected": "\"-0\"^^<http://www.w3.org/2001/XMLSchema#float>",
+        "note": "negative zero keeps its sign"
+      },
+      {
+        "input": "1",
+        "expected": "\"1\"^^<http://www.w3.org/2001/XMLSchema#float>"
+      },
+      {
+        "input": "1.5",
+        "expected": "\"1.5\"^^<http://www.w3.org/2001/XMLSchema#float>"
+      },
+      {
+        "input": "1.10",
+        "expected": "\"1.1\"^^<http://www.w3.org/2001/XMLSchema#float>",
+        "note": "trailing zero dropped"
+      },
+      {
+        "input": "0.1",
+        "expected": "\"0.1\"^^<http://www.w3.org/2001/XMLSchema#float>"
+      },
+      {
+        "input": "0.30000000000000004",
+        "expected": "\"0.30000000000000004\"^^<http://www.w3.org/2001/XMLSchema#float>"
+      },
+      {
+        "input": "3.75",
+        "expected": "\"3.75\"^^<http://www.w3.org/2001/XMLSchema#float>"
+      },
+      {
+        "input": "10.5",
+        "expected": "\"10.5\"^^<http://www.w3.org/2001/XMLSchema#float>"
+      },
+      {
+        "input": "100",
+        "expected": "\"100\"^^<http://www.w3.org/2001/XMLSchema#float>",
+        "note": "no exponent, no .0"
+      },
+      {
+        "input": "-2.5",
+        "expected": "\"-2.5\"^^<http://www.w3.org/2001/XMLSchema#float>"
+      },
+      {
+        "input": "1e21",
+        "expected": "\"1000000000000000000000\"^^<http://www.w3.org/2001/XMLSchema#float>",
+        "note": "Python repr would give 1e+21; Go 'f' never uses an exponent"
+      },
+      {
+        "input": "1e-7",
+        "expected": "\"0.0000001\"^^<http://www.w3.org/2001/XMLSchema#float>",
+        "note": "Python repr would give 1e-07"
+      },
+      {
+        "input": "123456789.123456789",
+        "expected": "\"123456789.12345679\"^^<http://www.w3.org/2001/XMLSchema#float>",
+        "note": "shortest round-trip digits"
+      },
+      {
+        "input": "12345678901234567890.125",
+        "expected": "\"12345678901234567000\"^^<http://www.w3.org/2001/XMLSchema#float>",
+        "note": "beyond float64 precision; digits past 17 become zeros"
+      },
+      {
+        "input": "5e-324",
+        "expected": "\"0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005\"^^<http://www.w3.org/2001/XMLSchema#float>",
+        "note": "smallest subnormal"
+      },
+      {
+        "input": "1.7976931348623157e308",
+        "expected": "\"179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"^^<http://www.w3.org/2001/XMLSchema#float>",
+        "note": "largest finite"
+      },
+      {
+        "input": "NaN",
+        "expected": "\"NaN\"^^<http://www.w3.org/2001/XMLSchema#float>",
+        "note": "Postgres numeric can hold NaN"
+      },
+      {
+        "input": "+Inf",
+        "expected": "\"+Inf\"^^<http://www.w3.org/2001/XMLSchema#float>",
+        "note": "Postgres numeric (>=14) can hold Infinity"
+      },
+      {
+        "input": "-Inf",
+        "expected": "\"-Inf\"^^<http://www.w3.org/2001/XMLSchema#float>"
+      }
+    ],
+    "function": "common.FloatLiteral"
+  }
+}

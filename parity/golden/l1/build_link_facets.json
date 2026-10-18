@@ -1,0 +1,135 @@
+{
+  "format": "dgraph-etl-parity/golden/v1",
+  "kind": "l1.cases",
+  "name": "l1/build_link_facets",
+  "description": "buildLinkFacets (incremental/links.go:393-416). String facets are emitted only when non-empty; qty only when non-NULL; order is event1_version, event2_version, role, qty, unit, source. `qty` input is a decimal string or null.",
+  "provenance": {
+    "generator_commit": "b487294e04cdb6fea5e49224364830e9762d2f58",
+    "baseline_commit": "b487294e04cdb6fea5e49224364830e9762d2f58",
+    "generated_by": "TestParityL1BuildLinkFacets",
+    "go_version": "go1.25.3"
+  },
+  "comparison": "exact: for every case, the function's output must equal `expected` byte-for-byte (strings compared as Unicode text; see each file's notes for non-parity cases)",
+  "data": {
+    "cases": [
+      {
+        "input": {
+          "event1_version": "v1",
+          "event2_version": "v2",
+          "role": "SYN-input",
+          "qty": "2.5",
+          "unit": "MT",
+          "source": "SYN-LINKSRC"
+        },
+        "expected": "event1_version=\"v1\", event2_version=\"v2\", role=\"SYN-input\", qty=2.5, unit=\"MT\", source=\"SYN-LINKSRC\"",
+        "note": "all six present, fixed order"
+      },
+      {
+        "input": {
+          "event1_version": "",
+          "event2_version": "",
+          "role": "",
+          "qty": null,
+          "unit": "",
+          "source": ""
+        },
+        "expected": "",
+        "note": "all absent: empty string, so upsertLinks writes no parentheses"
+      },
+      {
+        "input": {
+          "event1_version": "",
+          "event2_version": "",
+          "role": "",
+          "qty": "0",
+          "unit": "",
+          "source": ""
+        },
+        "expected": "qty=0",
+        "note": "qty is omitted only when NULL; zero is emitted"
+      },
+      {
+        "input": {
+          "event1_version": "",
+          "event2_version": "",
+          "role": "",
+          "qty": "-0",
+          "unit": "",
+          "source": ""
+        },
+        "expected": "qty=-0"
+      },
+      {
+        "input": {
+          "event1_version": "",
+          "event2_version": "",
+          "role": "",
+          "qty": "1e21",
+          "unit": "",
+          "source": ""
+        },
+        "expected": "qty=1000000000000000000000",
+        "note": "no exponent"
+      },
+      {
+        "input": {
+          "event1_version": "",
+          "event2_version": "",
+          "role": "",
+          "qty": "0.1",
+          "unit": "",
+          "source": ""
+        },
+        "expected": "qty=0.1"
+      },
+      {
+        "input": {
+          "event1_version": "",
+          "event2_version": "",
+          "role": "SYN \"q\" \\ é",
+          "qty": null,
+          "unit": "",
+          "source": ""
+        },
+        "expected": "role=\"SYN \\\"q\\\" \\\\ é\"",
+        "note": "string facets use StringLiteral escaping"
+      },
+      {
+        "input": {
+          "event1_version": "",
+          "event2_version": "",
+          "role": " ",
+          "qty": null,
+          "unit": "",
+          "source": ""
+        },
+        "expected": "role=\" \"",
+        "note": "buildLinkFacets does not trim; normalisation upstream does (links.go:256)"
+      },
+      {
+        "input": {
+          "event1_version": "",
+          "event2_version": "v9",
+          "role": "",
+          "qty": null,
+          "unit": "KG",
+          "source": ""
+        },
+        "expected": "event2_version=\"v9\", unit=\"KG\"",
+        "note": "subset keeps relative order"
+      },
+      {
+        "input": {
+          "event1_version": "",
+          "event2_version": "",
+          "role": "",
+          "qty": null,
+          "unit": "",
+          "source": "SYN-LINKSRC"
+        },
+        "expected": "source=\"SYN-LINKSRC\""
+      }
+    ],
+    "function": "buildLinkFacets"
+  }
+}

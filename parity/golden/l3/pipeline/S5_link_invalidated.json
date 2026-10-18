@@ -1,0 +1,795 @@
+{
+  "format": "dgraph-etl-parity/golden/v1",
+  "kind": "l3.pipeline",
+  "name": "l3/pipeline/S5_link_invalidated",
+  "description": "Link invalidated: removal -> events -> links -> sync_time against the synthetic fixture with the pre-run graph from graph_seed.json. Link invalidated",
+  "provenance": {
+    "generator_commit": "b487294e04cdb6fea5e49224364830e9762d2f58",
+    "baseline_commit": "b487294e04cdb6fea5e49224364830e9762d2f58",
+    "generated_by": "TestParityL3Pipeline/S5_link_invalidated",
+    "go_version": "go1.25.3"
+  },
+  "comparison": "canonical: `writes` is ordered and compared element by element. Each write's `set` and `del` are its N-Quad lines after canonicalisation (parity/README.md §Canonical form): split on newline, blank lines dropped, `<0x..>` rewritten to `<uid:UNIQUE_ID>`, blank nodes rewritten to `_:new:UNIQUE_ID`, sorted bytewise. Line text is otherwise byte-exact, including literal escaping and facet order. Blank-node label strings are NOT compared (P4-3); one label per unique_id per mutation IS required. `graph_after` and `sync_time_stamped` are compared exactly. `lookups_informational` documents reads and is not part of the contract.",
+  "data": {
+    "config": {
+      "events": {
+        "lookup_batch_size": 10000,
+        "lookup_concurrency": 1,
+        "upsert_batch_size": 10000,
+        "upsert_concurrency": 1
+      },
+      "fetch_chunk_size": 10000,
+      "links": {
+        "cleanup_batch_size": 10000,
+        "cleanup_concurrency": 1,
+        "lookup_batch_size": 10000,
+        "lookup_concurrency": 1,
+        "upsert_batch_size": 10000,
+        "upsert_concurrency": 1
+      },
+      "removal": {
+        "delete_batch_size": 10000,
+        "delete_concurrency": 1,
+        "lookup_batch_size": 10000,
+        "lookup_concurrency": 1
+      }
+    },
+    "fixture": {
+      "graph_seed": "parity/fixture/graph_seed.json",
+      "row_prefix": "SYN-S5-",
+      "schema": "parity/fixture/sql/01_schema.sql",
+      "seed": "parity/fixture/sql/02_seed.sql"
+    },
+    "graph_after": {
+      "SYN-S5-E01": {
+        "predicates": {
+          "amount": [
+            "\"10.5\"^^<http://www.w3.org/2001/XMLSchema#float>"
+          ],
+          "bl_number": [
+            "\"SYN-BL-0001\""
+          ],
+          "client_id": [
+            "\"SYN-CLIENT-01\""
+          ],
+          "dgraph.type": [
+            "\"Event\""
+          ],
+          "flag": [
+            "\"SYN-FLAG\""
+          ],
+          "location_facility_master_id": [
+            "\"SYN-MST-F01\""
+          ],
+          "location_facility_master_type": [
+            "\"syn_facility\""
+          ],
+          "location_facility_subject_id": [
+            "\"SYN-FAC-001\""
+          ],
+          "location_facility_subject_type": [
+            "\"SYN_FACILITY\""
+          ],
+          "location_id": [
+            "\"SYN-LOC-001\""
+          ],
+          "location_master_id": [
+            "\"SYN-MST-001\""
+          ],
+          "location_master_type": [
+            "\"syn_mill\""
+          ],
+          "location_subject_type": [
+            "\"SYN_MILL\""
+          ],
+          "material_code": [
+            "\"SYN-MC-01\""
+          ],
+          "material_document": [
+            "\"SYN-MD-01\""
+          ],
+          "material_type": [
+            "\"SYN-MT\""
+          ],
+          "mill_id": [
+            "\"SYN-MILL-001\""
+          ],
+          "mill_name": [
+            "\"SYN Mill One\""
+          ],
+          "movement_type": [
+            "\"SYN-101\""
+          ],
+          "movement_type_text": [
+            "\"SYN goods receipt\""
+          ],
+          "partner_pca": [
+            "\"SYN-PCA\""
+          ],
+          "plant": [
+            "\"SYN-PL01\""
+          ],
+          "process_date": [
+            "\"1700000000\"^^<http://www.w3.org/2001/XMLSchema#int>"
+          ],
+          "product_id": [
+            "\"SYN-PRD-01\""
+          ],
+          "product_name": [
+            "\"SYN Product\""
+          ],
+          "production_label": [
+            "\"SYN-PLB-01\""
+          ],
+          "purchase_order": [
+            "\"SYN-PO-01\""
+          ],
+          "sales_order": [
+            "\"SYN-SO-0001\""
+          ],
+          "source": [
+            "\"SYN-SRC-001\""
+          ],
+          "source_master_id": [
+            "\"SYN-MST-003\""
+          ],
+          "source_master_type": [
+            "\"syn_supplier\""
+          ],
+          "source_subject_type": [
+            "\"SYN_SUPPLIER\""
+          ],
+          "src_path": [
+            "\"{\\\"step\\\": 1}\""
+          ],
+          "storage_location": [
+            "\"SYN-SL01\""
+          ],
+          "sub_data_source": [
+            "\"SYN-SDS\""
+          ],
+          "uml_id": [
+            "\"SYN-UML-001\""
+          ],
+          "unique_id": [
+            "\"SYN-S5-E01\""
+          ],
+          "unit": [
+            "\"MT\""
+          ],
+          "vendor": [
+            "\"SYN-VEN-01\""
+          ],
+          "version": [
+            "\"v1\""
+          ]
+        },
+        "links": [
+          {
+            "to": "SYN-S5-E03",
+            "facets": {
+              "event1_version": "\"v1\"",
+              "event2_version": "\"v1\"",
+              "qty": "5",
+              "role": "\"SYN-input\"",
+              "source": "\"SYN-LINKSRC\"",
+              "unit": "\"MT\""
+            }
+          }
+        ]
+      },
+      "SYN-S5-E02": {
+        "predicates": {
+          "amount": [
+            "\"10.5\"^^<http://www.w3.org/2001/XMLSchema#float>"
+          ],
+          "bl_number": [
+            "\"SYN-BL-0001\""
+          ],
+          "client_id": [
+            "\"SYN-CLIENT-01\""
+          ],
+          "dgraph.type": [
+            "\"Event\""
+          ],
+          "flag": [
+            "\"SYN-FLAG\""
+          ],
+          "location_facility_master_id": [
+            "\"SYN-MST-F01\""
+          ],
+          "location_facility_master_type": [
+            "\"syn_facility\""
+          ],
+          "location_facility_subject_id": [
+            "\"SYN-FAC-001\""
+          ],
+          "location_facility_subject_type": [
+            "\"SYN_FACILITY\""
+          ],
+          "location_id": [
+            "\"SYN-LOC-001\""
+          ],
+          "location_master_id": [
+            "\"SYN-MST-001\""
+          ],
+          "location_master_type": [
+            "\"syn_mill\""
+          ],
+          "location_subject_type": [
+            "\"SYN_MILL\""
+          ],
+          "material_code": [
+            "\"SYN-MC-01\""
+          ],
+          "material_document": [
+            "\"SYN-MD-01\""
+          ],
+          "material_type": [
+            "\"SYN-MT\""
+          ],
+          "mill_id": [
+            "\"SYN-MILL-001\""
+          ],
+          "mill_name": [
+            "\"SYN Mill One\""
+          ],
+          "movement_type": [
+            "\"SYN-101\""
+          ],
+          "movement_type_text": [
+            "\"SYN goods receipt\""
+          ],
+          "partner_pca": [
+            "\"SYN-PCA\""
+          ],
+          "plant": [
+            "\"SYN-PL01\""
+          ],
+          "process_date": [
+            "\"1700000000\"^^<http://www.w3.org/2001/XMLSchema#int>"
+          ],
+          "product_id": [
+            "\"SYN-PRD-01\""
+          ],
+          "product_name": [
+            "\"SYN Product\""
+          ],
+          "production_label": [
+            "\"SYN-PLB-01\""
+          ],
+          "purchase_order": [
+            "\"SYN-PO-01\""
+          ],
+          "sales_order": [
+            "\"SYN-SO-0001\""
+          ],
+          "source": [
+            "\"SYN-SRC-001\""
+          ],
+          "source_master_id": [
+            "\"SYN-MST-003\""
+          ],
+          "source_master_type": [
+            "\"syn_supplier\""
+          ],
+          "source_subject_type": [
+            "\"SYN_SUPPLIER\""
+          ],
+          "src_path": [
+            "\"{\\\"step\\\": 1}\""
+          ],
+          "storage_location": [
+            "\"SYN-SL01\""
+          ],
+          "sub_data_source": [
+            "\"SYN-SDS\""
+          ],
+          "uml_id": [
+            "\"SYN-UML-001\""
+          ],
+          "unique_id": [
+            "\"SYN-S5-E02\""
+          ],
+          "unit": [
+            "\"MT\""
+          ],
+          "vendor": [
+            "\"SYN-VEN-01\""
+          ],
+          "version": [
+            "\"v1\""
+          ]
+        },
+        "links": []
+      },
+      "SYN-S5-E03": {
+        "predicates": {
+          "amount": [
+            "\"10.5\"^^<http://www.w3.org/2001/XMLSchema#float>"
+          ],
+          "bl_number": [
+            "\"SYN-BL-0001\""
+          ],
+          "client_id": [
+            "\"SYN-CLIENT-01\""
+          ],
+          "dgraph.type": [
+            "\"Event\""
+          ],
+          "flag": [
+            "\"SYN-FLAG\""
+          ],
+          "location_facility_master_id": [
+            "\"SYN-MST-F01\""
+          ],
+          "location_facility_master_type": [
+            "\"syn_facility\""
+          ],
+          "location_facility_subject_id": [
+            "\"SYN-FAC-001\""
+          ],
+          "location_facility_subject_type": [
+            "\"SYN_FACILITY\""
+          ],
+          "location_id": [
+            "\"SYN-LOC-001\""
+          ],
+          "location_master_id": [
+            "\"SYN-MST-001\""
+          ],
+          "location_master_type": [
+            "\"syn_mill\""
+          ],
+          "location_subject_type": [
+            "\"SYN_MILL\""
+          ],
+          "material_code": [
+            "\"SYN-MC-01\""
+          ],
+          "material_document": [
+            "\"SYN-MD-01\""
+          ],
+          "material_type": [
+            "\"SYN-MT\""
+          ],
+          "mill_id": [
+            "\"SYN-MILL-001\""
+          ],
+          "mill_name": [
+            "\"SYN Mill One\""
+          ],
+          "movement_type": [
+            "\"SYN-101\""
+          ],
+          "movement_type_text": [
+            "\"SYN goods receipt\""
+          ],
+          "partner_pca": [
+            "\"SYN-PCA\""
+          ],
+          "plant": [
+            "\"SYN-PL01\""
+          ],
+          "process_date": [
+            "\"1700000000\"^^<http://www.w3.org/2001/XMLSchema#int>"
+          ],
+          "product_id": [
+            "\"SYN-PRD-01\""
+          ],
+          "product_name": [
+            "\"SYN Product\""
+          ],
+          "production_label": [
+            "\"SYN-PLB-01\""
+          ],
+          "purchase_order": [
+            "\"SYN-PO-01\""
+          ],
+          "sales_order": [
+            "\"SYN-SO-0001\""
+          ],
+          "source": [
+            "\"SYN-SRC-001\""
+          ],
+          "source_master_id": [
+            "\"SYN-MST-003\""
+          ],
+          "source_master_type": [
+            "\"syn_supplier\""
+          ],
+          "source_subject_type": [
+            "\"SYN_SUPPLIER\""
+          ],
+          "src_path": [
+            "\"{\\\"step\\\": 1}\""
+          ],
+          "storage_location": [
+            "\"SYN-SL01\""
+          ],
+          "sub_data_source": [
+            "\"SYN-SDS\""
+          ],
+          "uml_id": [
+            "\"SYN-UML-001\""
+          ],
+          "unique_id": [
+            "\"SYN-S5-E03\""
+          ],
+          "unit": [
+            "\"MT\""
+          ],
+          "vendor": [
+            "\"SYN-VEN-01\""
+          ],
+          "version": [
+            "\"v1\""
+          ]
+        },
+        "links": []
+      },
+      "SYN-S5-E04": {
+        "predicates": {
+          "amount": [
+            "\"10.5\"^^<http://www.w3.org/2001/XMLSchema#float>"
+          ],
+          "bl_number": [
+            "\"SYN-BL-0001\""
+          ],
+          "client_id": [
+            "\"SYN-CLIENT-01\""
+          ],
+          "dgraph.type": [
+            "\"Event\""
+          ],
+          "flag": [
+            "\"SYN-FLAG\""
+          ],
+          "location_facility_master_id": [
+            "\"SYN-MST-F01\""
+          ],
+          "location_facility_master_type": [
+            "\"syn_facility\""
+          ],
+          "location_facility_subject_id": [
+            "\"SYN-FAC-001\""
+          ],
+          "location_facility_subject_type": [
+            "\"SYN_FACILITY\""
+          ],
+          "location_id": [
+            "\"SYN-LOC-001\""
+          ],
+          "location_master_id": [
+            "\"SYN-MST-001\""
+          ],
+          "location_master_type": [
+            "\"syn_mill\""
+          ],
+          "location_subject_type": [
+            "\"SYN_MILL\""
+          ],
+          "material_code": [
+            "\"SYN-MC-01\""
+          ],
+          "material_document": [
+            "\"SYN-MD-01\""
+          ],
+          "material_type": [
+            "\"SYN-MT\""
+          ],
+          "mill_id": [
+            "\"SYN-MILL-001\""
+          ],
+          "mill_name": [
+            "\"SYN Mill One\""
+          ],
+          "movement_type": [
+            "\"SYN-101\""
+          ],
+          "movement_type_text": [
+            "\"SYN goods receipt\""
+          ],
+          "partner_pca": [
+            "\"SYN-PCA\""
+          ],
+          "plant": [
+            "\"SYN-PL01\""
+          ],
+          "process_date": [
+            "\"1700000000\"^^<http://www.w3.org/2001/XMLSchema#int>"
+          ],
+          "product_id": [
+            "\"SYN-PRD-01\""
+          ],
+          "product_name": [
+            "\"SYN Product\""
+          ],
+          "production_label": [
+            "\"SYN-PLB-01\""
+          ],
+          "purchase_order": [
+            "\"SYN-PO-01\""
+          ],
+          "sales_order": [
+            "\"SYN-SO-0001\""
+          ],
+          "source": [
+            "\"SYN-SRC-001\""
+          ],
+          "source_master_id": [
+            "\"SYN-MST-003\""
+          ],
+          "source_master_type": [
+            "\"syn_supplier\""
+          ],
+          "source_subject_type": [
+            "\"SYN_SUPPLIER\""
+          ],
+          "src_path": [
+            "\"{\\\"step\\\": 1}\""
+          ],
+          "storage_location": [
+            "\"SYN-SL01\""
+          ],
+          "sub_data_source": [
+            "\"SYN-SDS\""
+          ],
+          "uml_id": [
+            "\"SYN-UML-001\""
+          ],
+          "unique_id": [
+            "\"SYN-S5-E04\""
+          ],
+          "unit": [
+            "\"MT\""
+          ],
+          "vendor": [
+            "\"SYN-VEN-01\""
+          ],
+          "version": [
+            "\"v1\""
+          ]
+        },
+        "links": []
+      }
+    },
+    "lookups_informational": [
+      {
+        "step": "events",
+        "unique_ids": [
+          "SYN-S5-E01",
+          "SYN-S5-E02",
+          "SYN-S5-E03",
+          "SYN-S5-E04"
+        ]
+      }
+    ],
+    "scenario": "S5",
+    "steps": [
+      "removal",
+      "events",
+      "links",
+      "sync_time"
+    ],
+    "sync_time_stamped": {
+      "events_bc": [],
+      "links_bc": [
+        950001,
+        950003
+      ]
+    },
+    "writes": [
+      {
+        "step": "events",
+        "op": "MutateWithDeletesRDF",
+        "set": [
+          "<uid:SYN-S5-E01> <amount> \"10.5\"^^<http://www.w3.org/2001/XMLSchema#float> .",
+          "<uid:SYN-S5-E01> <bl_number> \"SYN-BL-0001\" .",
+          "<uid:SYN-S5-E01> <client_id> \"SYN-CLIENT-01\" .",
+          "<uid:SYN-S5-E01> <dgraph.type> \"Event\" .",
+          "<uid:SYN-S5-E01> <flag> \"SYN-FLAG\" .",
+          "<uid:SYN-S5-E01> <location_facility_master_id> \"SYN-MST-F01\" .",
+          "<uid:SYN-S5-E01> <location_facility_master_type> \"syn_facility\" .",
+          "<uid:SYN-S5-E01> <location_facility_subject_id> \"SYN-FAC-001\" .",
+          "<uid:SYN-S5-E01> <location_facility_subject_type> \"SYN_FACILITY\" .",
+          "<uid:SYN-S5-E01> <location_id> \"SYN-LOC-001\" .",
+          "<uid:SYN-S5-E01> <location_master_id> \"SYN-MST-001\" .",
+          "<uid:SYN-S5-E01> <location_master_type> \"syn_mill\" .",
+          "<uid:SYN-S5-E01> <location_subject_type> \"SYN_MILL\" .",
+          "<uid:SYN-S5-E01> <material_code> \"SYN-MC-01\" .",
+          "<uid:SYN-S5-E01> <material_document> \"SYN-MD-01\" .",
+          "<uid:SYN-S5-E01> <material_type> \"SYN-MT\" .",
+          "<uid:SYN-S5-E01> <mill_id> \"SYN-MILL-001\" .",
+          "<uid:SYN-S5-E01> <mill_name> \"SYN Mill One\" .",
+          "<uid:SYN-S5-E01> <movement_type> \"SYN-101\" .",
+          "<uid:SYN-S5-E01> <movement_type_text> \"SYN goods receipt\" .",
+          "<uid:SYN-S5-E01> <partner_pca> \"SYN-PCA\" .",
+          "<uid:SYN-S5-E01> <plant> \"SYN-PL01\" .",
+          "<uid:SYN-S5-E01> <process_date> \"1700000000\"^^<http://www.w3.org/2001/XMLSchema#int> .",
+          "<uid:SYN-S5-E01> <product_id> \"SYN-PRD-01\" .",
+          "<uid:SYN-S5-E01> <product_name> \"SYN Product\" .",
+          "<uid:SYN-S5-E01> <production_label> \"SYN-PLB-01\" .",
+          "<uid:SYN-S5-E01> <purchase_order> \"SYN-PO-01\" .",
+          "<uid:SYN-S5-E01> <sales_order> \"SYN-SO-0001\" .",
+          "<uid:SYN-S5-E01> <source> \"SYN-SRC-001\" .",
+          "<uid:SYN-S5-E01> <source_master_id> \"SYN-MST-003\" .",
+          "<uid:SYN-S5-E01> <source_master_type> \"syn_supplier\" .",
+          "<uid:SYN-S5-E01> <source_subject_type> \"SYN_SUPPLIER\" .",
+          "<uid:SYN-S5-E01> <src_path> \"{\\\"step\\\": 1}\" .",
+          "<uid:SYN-S5-E01> <storage_location> \"SYN-SL01\" .",
+          "<uid:SYN-S5-E01> <sub_data_source> \"SYN-SDS\" .",
+          "<uid:SYN-S5-E01> <uml_id> \"SYN-UML-001\" .",
+          "<uid:SYN-S5-E01> <unique_id> \"SYN-S5-E01\" .",
+          "<uid:SYN-S5-E01> <unit> \"MT\" .",
+          "<uid:SYN-S5-E01> <vendor> \"SYN-VEN-01\" .",
+          "<uid:SYN-S5-E01> <version> \"v1\" .",
+          "<uid:SYN-S5-E02> <amount> \"10.5\"^^<http://www.w3.org/2001/XMLSchema#float> .",
+          "<uid:SYN-S5-E02> <bl_number> \"SYN-BL-0001\" .",
+          "<uid:SYN-S5-E02> <client_id> \"SYN-CLIENT-01\" .",
+          "<uid:SYN-S5-E02> <dgraph.type> \"Event\" .",
+          "<uid:SYN-S5-E02> <flag> \"SYN-FLAG\" .",
+          "<uid:SYN-S5-E02> <location_facility_master_id> \"SYN-MST-F01\" .",
+          "<uid:SYN-S5-E02> <location_facility_master_type> \"syn_facility\" .",
+          "<uid:SYN-S5-E02> <location_facility_subject_id> \"SYN-FAC-001\" .",
+          "<uid:SYN-S5-E02> <location_facility_subject_type> \"SYN_FACILITY\" .",
+          "<uid:SYN-S5-E02> <location_id> \"SYN-LOC-001\" .",
+          "<uid:SYN-S5-E02> <location_master_id> \"SYN-MST-001\" .",
+          "<uid:SYN-S5-E02> <location_master_type> \"syn_mill\" .",
+          "<uid:SYN-S5-E02> <location_subject_type> \"SYN_MILL\" .",
+          "<uid:SYN-S5-E02> <material_code> \"SYN-MC-01\" .",
+          "<uid:SYN-S5-E02> <material_document> \"SYN-MD-01\" .",
+          "<uid:SYN-S5-E02> <material_type> \"SYN-MT\" .",
+          "<uid:SYN-S5-E02> <mill_id> \"SYN-MILL-001\" .",
+          "<uid:SYN-S5-E02> <mill_name> \"SYN Mill One\" .",
+          "<uid:SYN-S5-E02> <movement_type> \"SYN-101\" .",
+          "<uid:SYN-S5-E02> <movement_type_text> \"SYN goods receipt\" .",
+          "<uid:SYN-S5-E02> <partner_pca> \"SYN-PCA\" .",
+          "<uid:SYN-S5-E02> <plant> \"SYN-PL01\" .",
+          "<uid:SYN-S5-E02> <process_date> \"1700000000\"^^<http://www.w3.org/2001/XMLSchema#int> .",
+          "<uid:SYN-S5-E02> <product_id> \"SYN-PRD-01\" .",
+          "<uid:SYN-S5-E02> <product_name> \"SYN Product\" .",
+          "<uid:SYN-S5-E02> <production_label> \"SYN-PLB-01\" .",
+          "<uid:SYN-S5-E02> <purchase_order> \"SYN-PO-01\" .",
+          "<uid:SYN-S5-E02> <sales_order> \"SYN-SO-0001\" .",
+          "<uid:SYN-S5-E02> <source> \"SYN-SRC-001\" .",
+          "<uid:SYN-S5-E02> <source_master_id> \"SYN-MST-003\" .",
+          "<uid:SYN-S5-E02> <source_master_type> \"syn_supplier\" .",
+          "<uid:SYN-S5-E02> <source_subject_type> \"SYN_SUPPLIER\" .",
+          "<uid:SYN-S5-E02> <src_path> \"{\\\"step\\\": 1}\" .",
+          "<uid:SYN-S5-E02> <storage_location> \"SYN-SL01\" .",
+          "<uid:SYN-S5-E02> <sub_data_source> \"SYN-SDS\" .",
+          "<uid:SYN-S5-E02> <uml_id> \"SYN-UML-001\" .",
+          "<uid:SYN-S5-E02> <unique_id> \"SYN-S5-E02\" .",
+          "<uid:SYN-S5-E02> <unit> \"MT\" .",
+          "<uid:SYN-S5-E02> <vendor> \"SYN-VEN-01\" .",
+          "<uid:SYN-S5-E02> <version> \"v1\" .",
+          "<uid:SYN-S5-E03> <amount> \"10.5\"^^<http://www.w3.org/2001/XMLSchema#float> .",
+          "<uid:SYN-S5-E03> <bl_number> \"SYN-BL-0001\" .",
+          "<uid:SYN-S5-E03> <client_id> \"SYN-CLIENT-01\" .",
+          "<uid:SYN-S5-E03> <dgraph.type> \"Event\" .",
+          "<uid:SYN-S5-E03> <flag> \"SYN-FLAG\" .",
+          "<uid:SYN-S5-E03> <location_facility_master_id> \"SYN-MST-F01\" .",
+          "<uid:SYN-S5-E03> <location_facility_master_type> \"syn_facility\" .",
+          "<uid:SYN-S5-E03> <location_facility_subject_id> \"SYN-FAC-001\" .",
+          "<uid:SYN-S5-E03> <location_facility_subject_type> \"SYN_FACILITY\" .",
+          "<uid:SYN-S5-E03> <location_id> \"SYN-LOC-001\" .",
+          "<uid:SYN-S5-E03> <location_master_id> \"SYN-MST-001\" .",
+          "<uid:SYN-S5-E03> <location_master_type> \"syn_mill\" .",
+          "<uid:SYN-S5-E03> <location_subject_type> \"SYN_MILL\" .",
+          "<uid:SYN-S5-E03> <material_code> \"SYN-MC-01\" .",
+          "<uid:SYN-S5-E03> <material_document> \"SYN-MD-01\" .",
+          "<uid:SYN-S5-E03> <material_type> \"SYN-MT\" .",
+          "<uid:SYN-S5-E03> <mill_id> \"SYN-MILL-001\" .",
+          "<uid:SYN-S5-E03> <mill_name> \"SYN Mill One\" .",
+          "<uid:SYN-S5-E03> <movement_type> \"SYN-101\" .",
+          "<uid:SYN-S5-E03> <movement_type_text> \"SYN goods receipt\" .",
+          "<uid:SYN-S5-E03> <partner_pca> \"SYN-PCA\" .",
+          "<uid:SYN-S5-E03> <plant> \"SYN-PL01\" .",
+          "<uid:SYN-S5-E03> <process_date> \"1700000000\"^^<http://www.w3.org/2001/XMLSchema#int> .",
+          "<uid:SYN-S5-E03> <product_id> \"SYN-PRD-01\" .",
+          "<uid:SYN-S5-E03> <product_name> \"SYN Product\" .",
+          "<uid:SYN-S5-E03> <production_label> \"SYN-PLB-01\" .",
+          "<uid:SYN-S5-E03> <purchase_order> \"SYN-PO-01\" .",
+          "<uid:SYN-S5-E03> <sales_order> \"SYN-SO-0001\" .",
+          "<uid:SYN-S5-E03> <source> \"SYN-SRC-001\" .",
+          "<uid:SYN-S5-E03> <source_master_id> \"SYN-MST-003\" .",
+          "<uid:SYN-S5-E03> <source_master_type> \"syn_supplier\" .",
+          "<uid:SYN-S5-E03> <source_subject_type> \"SYN_SUPPLIER\" .",
+          "<uid:SYN-S5-E03> <src_path> \"{\\\"step\\\": 1}\" .",
+          "<uid:SYN-S5-E03> <storage_location> \"SYN-SL01\" .",
+          "<uid:SYN-S5-E03> <sub_data_source> \"SYN-SDS\" .",
+          "<uid:SYN-S5-E03> <uml_id> \"SYN-UML-001\" .",
+          "<uid:SYN-S5-E03> <unique_id> \"SYN-S5-E03\" .",
+          "<uid:SYN-S5-E03> <unit> \"MT\" .",
+          "<uid:SYN-S5-E03> <vendor> \"SYN-VEN-01\" .",
+          "<uid:SYN-S5-E03> <version> \"v1\" .",
+          "<uid:SYN-S5-E04> <amount> \"10.5\"^^<http://www.w3.org/2001/XMLSchema#float> .",
+          "<uid:SYN-S5-E04> <bl_number> \"SYN-BL-0001\" .",
+          "<uid:SYN-S5-E04> <client_id> \"SYN-CLIENT-01\" .",
+          "<uid:SYN-S5-E04> <dgraph.type> \"Event\" .",
+          "<uid:SYN-S5-E04> <flag> \"SYN-FLAG\" .",
+          "<uid:SYN-S5-E04> <location_facility_master_id> \"SYN-MST-F01\" .",
+          "<uid:SYN-S5-E04> <location_facility_master_type> \"syn_facility\" .",
+          "<uid:SYN-S5-E04> <location_facility_subject_id> \"SYN-FAC-001\" .",
+          "<uid:SYN-S5-E04> <location_facility_subject_type> \"SYN_FACILITY\" .",
+          "<uid:SYN-S5-E04> <location_id> \"SYN-LOC-001\" .",
+          "<uid:SYN-S5-E04> <location_master_id> \"SYN-MST-001\" .",
+          "<uid:SYN-S5-E04> <location_master_type> \"syn_mill\" .",
+          "<uid:SYN-S5-E04> <location_subject_type> \"SYN_MILL\" .",
+          "<uid:SYN-S5-E04> <material_code> \"SYN-MC-01\" .",
+          "<uid:SYN-S5-E04> <material_document> \"SYN-MD-01\" .",
+          "<uid:SYN-S5-E04> <material_type> \"SYN-MT\" .",
+          "<uid:SYN-S5-E04> <mill_id> \"SYN-MILL-001\" .",
+          "<uid:SYN-S5-E04> <mill_name> \"SYN Mill One\" .",
+          "<uid:SYN-S5-E04> <movement_type> \"SYN-101\" .",
+          "<uid:SYN-S5-E04> <movement_type_text> \"SYN goods receipt\" .",
+          "<uid:SYN-S5-E04> <partner_pca> \"SYN-PCA\" .",
+          "<uid:SYN-S5-E04> <plant> \"SYN-PL01\" .",
+          "<uid:SYN-S5-E04> <process_date> \"1700000000\"^^<http://www.w3.org/2001/XMLSchema#int> .",
+          "<uid:SYN-S5-E04> <product_id> \"SYN-PRD-01\" .",
+          "<uid:SYN-S5-E04> <product_name> \"SYN Product\" .",
+          "<uid:SYN-S5-E04> <production_label> \"SYN-PLB-01\" .",
+          "<uid:SYN-S5-E04> <purchase_order> \"SYN-PO-01\" .",
+          "<uid:SYN-S5-E04> <sales_order> \"SYN-SO-0001\" .",
+          "<uid:SYN-S5-E04> <source> \"SYN-SRC-001\" .",
+          "<uid:SYN-S5-E04> <source_master_id> \"SYN-MST-003\" .",
+          "<uid:SYN-S5-E04> <source_master_type> \"syn_supplier\" .",
+          "<uid:SYN-S5-E04> <source_subject_type> \"SYN_SUPPLIER\" .",
+          "<uid:SYN-S5-E04> <src_path> \"{\\\"step\\\": 1}\" .",
+          "<uid:SYN-S5-E04> <storage_location> \"SYN-SL01\" .",
+          "<uid:SYN-S5-E04> <sub_data_source> \"SYN-SDS\" .",
+          "<uid:SYN-S5-E04> <uml_id> \"SYN-UML-001\" .",
+          "<uid:SYN-S5-E04> <unique_id> \"SYN-S5-E04\" .",
+          "<uid:SYN-S5-E04> <unit> \"MT\" .",
+          "<uid:SYN-S5-E04> <vendor> \"SYN-VEN-01\" .",
+          "<uid:SYN-S5-E04> <version> \"v1\" ."
+        ],
+        "del": [
+          "<uid:SYN-S5-E01> <source_facility_master_id> * .",
+          "<uid:SYN-S5-E01> <source_facility_master_type> * .",
+          "<uid:SYN-S5-E01> <source_facility_subject_id> * .",
+          "<uid:SYN-S5-E01> <source_facility_subject_type> * .",
+          "<uid:SYN-S5-E02> <source_facility_master_id> * .",
+          "<uid:SYN-S5-E02> <source_facility_master_type> * .",
+          "<uid:SYN-S5-E02> <source_facility_subject_id> * .",
+          "<uid:SYN-S5-E02> <source_facility_subject_type> * .",
+          "<uid:SYN-S5-E03> <source_facility_master_id> * .",
+          "<uid:SYN-S5-E03> <source_facility_master_type> * .",
+          "<uid:SYN-S5-E03> <source_facility_subject_id> * .",
+          "<uid:SYN-S5-E03> <source_facility_subject_type> * .",
+          "<uid:SYN-S5-E04> <source_facility_master_id> * .",
+          "<uid:SYN-S5-E04> <source_facility_master_type> * .",
+          "<uid:SYN-S5-E04> <source_facility_subject_id> * .",
+          "<uid:SYN-S5-E04> <source_facility_subject_type> * ."
+        ]
+      },
+      {
+        "step": "links",
+        "op": "DeleteRDF",
+        "set": [],
+        "del": [
+          "<uid:SYN-S5-E01> <links> * .",
+          "<uid:SYN-S5-E04> <links> * ."
+        ]
+      },
+      {
+        "step": "links",
+        "op": "MutateRDF",
+        "set": [
+          "<uid:SYN-S5-E01> <links> <uid:SYN-S5-E03> (event1_version=\"v1\", event2_version=\"v1\", role=\"SYN-input\", qty=5, unit=\"MT\", source=\"SYN-LINKSRC\") ."
+        ],
+        "del": []
+      },
+      {
+        "step": "links",
+        "op": "DeleteRDF",
+        "set": [],
+        "del": [
+          "<uid:SYN-S5-E02> <links> * .",
+          "<uid:SYN-S5-E03> <links> * ."
+        ]
+      }
+    ]
+  }
+}
