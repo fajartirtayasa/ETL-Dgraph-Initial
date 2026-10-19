@@ -210,3 +210,20 @@ Encoded as found at `b487294`, not judged. Raised for the owner:
    mutation (where a set and a delete of the same predicate resolve as delete-wins, INV-3) or in different
    batches (order-dependent). The fixture keeps one hierarchy row per key; whether production guarantees that
    is unknown.
+
+## Synthetic-data and credential guards (P4-14)
+
+`parity/guards/guards_test.go` - ordinary tests in the default `go test ./...` (no tag, no flag, no CI).
+They read only this checkout: the tracked-file list is parsed from `.git/index` (no git binary), and
+nothing touches the network, AWS or a credential.
+
+| Check | What fails it |
+|---|---|
+| (a) | a tracked `*.sql`, `*.dump`, `*.csv`, `*.rdf.gz` (and similar extract formats) outside `parity/fixture/` |
+| (b) | a tracked `.env*` (other than `.env.example`), key or credential file; an AWS-key, private-key, token or password-in-URL shape, or a random-looking literal, in tracked text (`go.sum` exempt: module checksums) |
+| (c) | a seed row (`sql/02_seed.sql`, parsed) whose identifier column lacks `SYN-`, a link `id` outside the 9S000k block, a `graph_seed.json` node or edge without `SYN-`, or a real-data look-alike (email, UUID, IP, AWS ARN, Indonesian phone / NPWP, company legal form, real organisation name) in the fixture or the goldens |
+| (d) | not applicable here: the Go code has no Secrets Manager loader. The §8.5 key-contract check lives in ETL-Dgraph-Incremental |
+
+Each check has a `TestNegative*` that plants what it forbids. The same rules are implemented in
+ETL-Dgraph-Incremental (`tests/guards.py`). Its `scripts/demo_guards_offline.sh` also runs this
+repository's suite with `--network none`.
