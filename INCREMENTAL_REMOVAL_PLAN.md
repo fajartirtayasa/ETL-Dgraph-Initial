@@ -336,7 +336,7 @@ In `REFACTOR_PLAN.md` (P18):
 |---|---|---|
 | V1 | `cmp schema.dql ../ETL-Dgraph-Incremental/schema.dql` after Commit 1 | identical |
 | V2 | `sha256sum -c` of the six fixture files against Python's lock | all `OK` |
-| V3 | Search Initial (excluding `.git/`) for `internal/etl/incremental`, `pkg/dgraph`, `dgraph.Adapter`, `DGRAPH_`, `INCREMENTAL_`, `ModeIncremental`, `scripts/setup_dgraph` | only historical mentions in `BASE_KNOWLEDGE.md`, `command.txt`, the frozen fixture files and `setup/README.md` |
+| V3 | Search Initial (excluding `.git/`) for `internal/etl/incremental`, `pkg/dgraph`, `dgraph.Adapter`, `DGRAPH_`, `INCREMENTAL_`, `ModeIncremental`, `scripts/setup_dgraph` | only historical mentions in `BASE_KNOWLEDGE.md`, `command.txt`, the frozen fixture files and `setup/README.md`, plus two temporary exceptions (owner decision, 2026-10-26): this plan, `INCREMENTAL_REMOVAL_PLAN.md`, until P20 deletes it; and exactly one comment line in `internal/etl/initial/stubdb_test.go`, the provenance note naming the file the stub driver was ported from. Any other hit in that file, or any hit in any other file, fails V3 |
 | V4 | `python -I tests/guards_precheck.py` over every changed or added file in the three repositories (explicit paths) | exit 0, no hits |
 | V5 | `python -I -m py_compile tests/test_retry.py` (Python repository) | compiles |
 | V6 | `git status --short` after each phase | only the intended files changed |
