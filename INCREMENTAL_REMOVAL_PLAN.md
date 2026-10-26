@@ -347,7 +347,7 @@ In `REFACTOR_PLAN.md` (P18):
 | # | Check | Expected |
 |---|---|---|
 | V7 | Docker Desktop running with `linux/arm64` emulation; `parity/fixture/rebuild.sh` | fixture database ready |
-| V8 | `parity/go.sh mod tidy`; `gofmt -l .` | `go.mod` / `go.sum` drop `dgo/v250`, `grpc` and their unused indirect modules; `gofmt` lists nothing. Committed as `build: tidy modules after removing the Dgraph client` (P8). **Open (Stage 0 audit):** `gofmt -l` also lists CRLF files and `parity/go.sh` has no way to run `gofmt`; both need an owner decision before this check is meaningful |
+| V8 | `parity/go.sh mod tidy`; `gofmt -l .` | `go.mod` / `go.sum` drop `dgo/v250`, `grpc` and their unused indirect modules; `gofmt -l` lists no file introduced by this branch: it may list only the five files it already lists on `main`, which are pre-existing, out of scope (§1) and left unchanged (`internal/etl/common/chunked_rdf_writer.go`, `parity/guards/guards_test.go`, `pkg/errors/validation.go`, `pkg/util/random_generator_test.go`, `pkg/util/replacer_test.go`; owner decision, 2026-10-26). Committed as `build: tidy modules after removing the Dgraph client` (P8). **Open (Stage 0 audit):** `gofmt -l` also lists CRLF files and `parity/go.sh` has no way to run `gofmt`; both need an owner decision before this check is meaningful |
 | V9 | `parity/go.sh vet ./...`; the same with `GOOS=linux GOARCH=arm64` in the build container | clean |
 | V10 | `parity/go.sh test ./...` | all pass: mode, schema, mirror, guards (with the checksum guard and its negative test), generator |
 | V11 | Negative: move `../ETL-Dgraph-Incremental` aside and rerun the schema test | **fails** with the clear message (never skips) |
