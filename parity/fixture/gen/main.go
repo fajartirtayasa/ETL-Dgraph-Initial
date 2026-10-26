@@ -1,4 +1,4 @@
-// Command gen generates the synthetic parity fixture (REFACTOR_PLAN.md P1-6,
+// Command gen generates the synthetic parity fixture (the Dgraph repository's REFACTOR_PLAN.md P1-6,
 // P1-7). Every row it emits is authored here; nothing is extracted from
 // Staging or Production (PD-3).
 //

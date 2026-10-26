@@ -1,4 +1,4 @@
-// Package guards holds the P4-14 synthetic-data and credential guards (REFACTOR_PLAN.md PD-3, D4)
+// Package guards holds the P4-14 synthetic-data and credential guards (the Dgraph repository's REFACTOR_PLAN.md PD-3, D4)
 // for this repository. They are ordinary tests in the default `go test ./...` run: no build tag, no
 // flag, no CI step (PD-10). They read only files in this checkout - the tracked list comes from
 // parsing .git/index directly, so no git binary, no network, no AWS and no credential is involved.

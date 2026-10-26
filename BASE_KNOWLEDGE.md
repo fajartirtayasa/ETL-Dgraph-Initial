@@ -1,5 +1,10 @@
 # BASE_KNOWLEDGE.md
 
+> **Historical snapshot at `b487294`.** Everything below describes this repository as it was at commit `b487294`,
+> when it still held the incremental mode, `pkg/dgraph` and the ECS / Azure Pipelines deployment. Those were
+> removed later (the incremental ETL now lives in `ETL-Dgraph-Incremental`). Read the body as history, not as a
+> description of the current code; for that, see `CLAUDE.md`. The body is unchanged.
+
 Reference knowledge for the `Dgraph` repository (Go module `hara/traceability-dgraph-etl`), derived from reading the source, config, schemas, and pipeline definitions.
 
 `CLAUDE.md` in this repo holds the short operational guidance (commands, invariants to respect when editing). This document is the deeper reference: exact queries, field mappings, module responsibilities, and verified gaps. Where the two overlap, `CLAUDE.md` is the summary and this is the detail.

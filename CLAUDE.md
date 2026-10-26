@@ -4,52 +4,62 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A single-binary Go ETL (`hara/traceability-dgraph-etl`) that migrates traceability data (events and the links between them) from PostgreSQL into Dgraph, at a scale of millions of rows. One process run executes exactly one of two mutually exclusive modes, selected by `APP_MODE` / `app.mode`:
+A single-binary Go ETL (`hara/traceability-dgraph-etl`) that exports traceability data (events and the links between them) from PostgreSQL, at a scale of millions of rows, as gzipped, chunked RDF N-Quad files in `./initial_imports/`, for the Dgraph bulk loader to consume out of band. It does **not** connect to Dgraph.
 
-- **`initial`** — bulk export. Does **not** connect to Dgraph. Streams Postgres and writes gzipped, chunked RDF N-Quad files into `./initial_imports/` for the Dgraph bulk loader to consume out of band.
-- **`incremental`** — daily CDC sync. Connects to Dgraph and applies live mutations.
+It accepts exactly one mode: **`APP_MODE=initial`** (or `app.mode: initial`). Anything else, including an empty value, is rejected at startup, before PostgreSQL is contacted (see Configuration flow). The daily incremental sync that used to live here is now the Python ETL in the sibling repository `ETL-Dgraph-Incremental`.
 
-`command.txt` is the original requirements brief from the repo owner (both strategies, field mappings, technical constraints). It is the source of truth for intended behaviour; read it before changing ETL semantics. The owner maintains technical flow documentation separately — do not generate flow/architecture docs unless asked.
+Three repositories sit side by side as sibling folders, and this one needs the others:
+
+| Folder | Role |
+|---|---|
+| `ETL-Dgraph-Initial` | this repository: the Go export |
+| `ETL-Dgraph-Incremental` | the Python incremental ETL; owns the canonical `schema.dql`; reads this repository's synthetic fixture in place |
+| `Dgraph` | holds the live `REFACTOR_PLAN.md` and `REFACTOR_ASSESSMENT.md` |
+
+`command.txt` is the original requirements brief from the repo owner (both strategies, field mappings, technical constraints). It is kept unchanged because the Python repository relies on it for field mappings; only the initial strategy applies to this code. Read it before changing export semantics. The owner maintains technical flow documentation separately — do not generate flow/architecture docs unless asked.
+
+`BASE_KNOWLEDGE.md` is a historical snapshot at commit `b487294` (it still describes the incremental mode and the ECS deployment). Do not treat it as current.
 
 ## Commands
 
-The Go toolchain is not on `PATH` in the current Windows dev environment; either install Go 1.25.3+ or build through Docker.
+Everything goes through Docker, targeting the pinned `golang:1.25.3-bookworm` image; no local Go is needed.
 
 ```bash
-go build -o traceability-dgraph-etl ./main.go
-go run ./main.go                      # mode comes from APP_MODE / config/app.yaml
-go test ./...
-go test ./pkg/util/ -run TestParseDate -v    # single test
-go vet ./...
-
-docker build -t traceability-dgraph-etl .    # root Dockerfile; distroless, bakes config/ + schema.dql
+bash build.sh                                # out/traceability-dgraph-etl (linux/arm64, static) + out/config/app.yaml
+parity/go.sh test ./...                      # the whole suite
+parity/go.sh test ./internal/etl -run TestParseMode -v     # a single test
+parity/go.sh vet ./...
+parity/go.sh run ./parity/fixture/gen        # regenerate the synthetic fixture (a reproducibility check, see below)
 ```
 
-The binary resolves config relative to the working directory (`config/app.yaml`, see `internal/app/consts/path.go`), so run it from the repo root.
+- `build.sh` always builds in the container, even when Go is installed locally, with `CGO_ENABLED=0 GOOS=linux GOARCH=arm64 -trimpath -ldflags="-s -w"`. `out/` is gitignored.
+- `parity/go.sh` runs `go` locally if it is installed, unless `PARITY_USE_DOCKER=1` forces the container. In the container it mounts this repository (read-write) and `../ETL-Dgraph-Incremental` (read-only) as `/work/<repo>`, and stops with an error if the sibling is missing.
+- **The tests need `ETL-Dgraph-Incremental` beside this repository**: the schema tests read its `schema.dql` and **fail, never skip,** when it is absent.
+- The binary resolves config relative to the working directory (`config/app.yaml`, see `internal/app/consts/path.go`), so run it from the repo root, or from a directory that holds `config/` (which is what `out/` is).
 
-Dgraph cluster provisioning lives in `scripts/` (`setup_dgraph_zero.sh`, `setup_dgraph_alpha.sh <ZERO_IP>`, `swap.sh`) — these are one-shot EC2 host-tuning scripts, not part of the app lifecycle.
+`setup/` holds old Dgraph host-provisioning scripts. They are historical, unmaintained and not part of the app lifecycle (see `setup/README.md`).
 
 ## Configuration flow
 
-`config/app.yaml` is loaded first, then every field is overridden by an env var in `overrideWithEnv` (`internal/app/config.go`); `.env` is loaded at startup via godotenv if present.
+`config/app.yaml` is loaded first, then every field is overridden by an env var in `overrideWithEnv` (`internal/app/config.go`); `.env` is loaded at startup via godotenv if present. `.env.example` lists the variables.
 
-Adding one tunable touches several files, all of which must stay in sync:
+Adding one tunable touches three files, which must stay in sync:
 
 1. `config/app.yaml` — yaml default + inline comment
 2. `internal/app/config.go` — struct field *and* the matching `util.GetEnvAs*` line
 3. `.env.example`
-4. `deployment/pipelines/stages/build.yml` — the generated `.env` content (the CI writes env vars into a `.env` baked into the image)
-5. For incremental knobs only: `internal/etl/incremental/config.go` (the runtime `Config` + its `ApplyDefaults` fallback) and the `toIncrementalConfig` mapper in `main.go`
 
-Note that `main.go` deliberately re-maps `app.*Config` structs into package-local config types (`database.Config`, `dgraph.Config`, `incremental.Config`) so `internal/etl/**` never imports `internal/app`.
+`main.go` deliberately re-maps `app.*Config` structs into package-local config types (`database.Config`) so `internal/etl/**` never imports `internal/app`.
+
+**`APP_MODE` is strict.** `etl.ParseMode` trims whitespace, ignores case and accepts only `initial`. An empty or whitespace-only value, `incremental` (with its own message pointing at ETL-Dgraph-Incremental) and anything else are errors, and `main.go` parses the mode right after loading the config, before the Postgres connection. A blank `APP_MODE=` line in `.env` **overrides** the yaml with an empty value and fails, which is why `.env.example` ships `APP_MODE=initial`. A yaml without an `app:` section gets an empty `AppConfig`, so the mode error appears instead of a nil-pointer panic. `INITIAL_WORKER_COUNT` and `INITIAL_CHUNK_SIZE` tune the export (blank means the default).
 
 ## Architecture
 
-`main.go` wires dependencies only (config → slog JSON logger → Postgres adapter → Dgraph adapter *if incremental* → `etl.Run`). `internal/etl/runner.go` dispatches on `Mode` and constructs the right migrator. Everything below that is mode-specific.
+`main.go` wires dependencies only (config → mode check → slog JSON logger → Postgres adapter → `etl.Run`). `internal/etl/runner.go` rejects any mode other than `initial` and builds the migrator.
 
 ### `internal/etl/common` — shared RDF machinery
 
-- `BlankNode(prefix, value)` produces deterministic blank-node IDs. Non-alphanumeric values are sanitised *and* suffixed with a SHA-1 of the original so `"A-1"` and `"A_1"` cannot collapse. Both initial-mode files and incremental-mode new nodes depend on this being stable — changing it invalidates any already-loaded graph.
+- `BlankNode(prefix, value)` produces deterministic blank-node IDs. Non-alphanumeric values are sanitised *and* suffixed with a SHA-1 of the original so `"A-1"` and `"A_1"` cannot collapse. The two output files are joined by it, so changing it breaks the join and invalidates any already-loaded graph.
 - `StringInterner` — 32-shard, RWMutex-per-shard, safe for concurrent use. Used to collapse repeated column values (product ids, units, subject types) across millions of rows.
 - `ChunkedGzipRDFWriter` — owns its file in a single background goroutine fed by a channel; rolls over to `base_1.rdf.gz`, `base_2.rdf.gz`, … every `chunk_size` records (default 1M).
 
@@ -61,36 +71,27 @@ Pipeline: one fetcher goroutine streams `eventsQuery` into a buffered channel �
 
 Event nodes and link edges are joined purely by blank-node identity across the two files — `links.rdf.gz` references `_:event_<id>` subjects that `events.rdf.gz` defines.
 
-### `internal/etl/incremental` — live sync
-
-`Migrator.Run` executes a fixed sequence; each step is a separate file:
-
-1. `traceability_check.go` — gate. Polls `traceability_log_daily` every 15 minutes until the upstream traceability ETL for (today − 2 days, Asia/Jakarta) is no longer `Running`. The job blocks here rather than racing upstream.
-2. `removal.go` — events/links marked `status = 'invalid'`, resolve `unique_id → uid`, `<uid> * * .` delete.
-3. `events.go` — events reachable from unsynced valid links, chunked by `FetchChunkSize`; per chunk: lookup uids → fetch details → upsert.
-4. `links.go` — same chunking but **keyed by `event1_id`**, then `sync_time` updates.
-
-The ETL does **not** refresh materialized views. `mv_events`, `monitoring_cache_shipments` and `mv_shipment_list` are refreshed by a separate Step Functions state downstream of this task — do not reintroduce a `REFRESH MATERIALIZED VIEW` here.
-
-Invariants worth knowing before editing this package:
-
-- **`sync_time IS NULL` is the CDC watermark.** All source queries filter on it, and `sync_time` is only stamped (`NOW()`) in `sync_time.go` after the graph mutations succeed, which is what makes a failed run safely re-runnable. Never stamp it early.
-- **Link chunks must be grouped by `event1_id`, not by link row.** `deleteExistingLinks` wipes `<event1_uid> <links> *` for every event1 in the chunk before re-adding; splitting one event1's links across two chunks makes the second chunk erase the first chunk's writes.
-- **Event upsert is set-or-delete, field by field.** A present value emits a `set` triple; an empty one emits a `<s> <p> *` delete in the same mutation (`MutateWithDeletesRDF`), so a value cleared in Postgres is actually cleared in Dgraph.
-- **uid resolution is cached in `uidMap`** (RWMutex map). A `unique_id` with no uid becomes a blank node; the uids Dgraph returns for those blank nodes are merged back via the `blankToID` map so later links in the same run can reference them.
-- **`fanOutBatches[T]` (`helpers.go`) is the only concurrency primitive** — a producer goroutine plus N workers under an `errgroup`. Every batch size and worker count it is given comes from config; don't hardcode new ones.
-- `cleanupMissingLinks` strips `links` from synced events that turned out not to be `event1` of any valid link.
-
 ### `pkg/` — reusable infrastructure
 
-Interface-first (`contract.go` declares the `Adapter`, a sibling file implements it) so ETL code depends on `database.Adapter` / `dgraph.Adapter`, never on concrete clients. `pkg/dgraph` wraps `dgo/v250` with round-robin across multiple alphas, gzip compression, and retry/backoff. `pkg/aws` (S3) and `pkg/database/migration.go` (goose) are wired into config but not yet used by any ETL path.
+Interface-first (`contract.go` declares the `Adapter`, a sibling file implements it) so ETL code depends on `database.Adapter`, never on a concrete client. `pkg/aws` (S3) and `pkg/database/migration.go` (goose) are wired into config but not used by any ETL path; `db_clean_replica`, `pkg/validator` and `pkg/httpx` are likewise unused.
 
 ## Schema
 
-`schema.dql` is the live flat Dgraph schema — all event attributes as scalar predicates on one `Event` type plus `links: [uid] @reverse`. It is applied **manually** (copied into the image, never loaded by the binary), so adding a predicate in Go code also requires pushing the schema to the cluster by hand.
+**`schema.dql` must stay byte-identical to `../ETL-Dgraph-Incremental/schema.dql`.** The Python repository is canonical, and the bulk-load runbook uses Python's copy. Never edit this copy on its own: change the canonical one, then copy it here. `.gitattributes` pins LF line endings so the comparison is not broken by a Windows checkout. Two tests in `internal/etl/initial/schema_test.go` enforce it:
+
+- a mirror test: the two files are byte-identical (the first differing line is reported);
+- a predicate test: the predicates and scalar types the export actually emits (events through `newAggregator` / `emitEvent`, links through `streamLinks` over a stub SQL driver) equal the schema's scalar declarations, which equal the fields of `type Event`, in both directions, plus `links` as `[uid]`. A new column therefore fails the test until the canonical schema declares it.
+
+`schema.dql` is applied to the cluster **manually**, never loaded by the binary, so adding a predicate in Go also means pushing the schema by hand.
 
 `denorm_schema.dql` is an alternative normalised model (`event.*` predicates, separate `Client`/`Plant`/`Subject`/`Mill` types). No code path references it; treat it as a design exploration, not as the deployed schema.
 
+## The frozen fixture
+
+`parity/fixture/` (synthetic Postgres rows, `graph_seed.json`, `scenarios.json`, `compose.yaml`, `rebuild.sh`) is **frozen**: the Python repository runs it in place and pins the same six SHA-256 values in its `tests/fixture.lock`. A checksum guard in `parity/guards/guards_test.go` (`TestGuardE_…`, with a negative test) fails on any change. Do not edit these files — not even a comment. `parity/fixture/gen` is kept as a reproducibility check: `TestGeneratedFilesUpToDate` fails if the generator would produce different bytes. The golden corpus that used to live in `parity/golden/` was removed; it survives in the Python repository's `tests/golden/` and at commit `b487294`. See `parity/README.md`.
+
+`parity/guards/guards_test.go` also holds the synthetic-data and credential guards (no tracked dumps, credentials or real-looking data), all ordinary tests in `go test ./...`.
+
 ## Deployment
 
-Azure Pipelines (`deployment/pipelines/azure-pipelines.yml`) triggers on `gar-dev` / `gar-stg` / `gar-prd-1`. The `Build` stage writes a `.env` from the matching variable group and publishes the whole source tree as a `DockerBuildContext` artifact; each environment stage builds `deployment/dockerfiles/Dockerfile-<env>` and pushes to ECR. The per-environment Dockerfiles copy that generated `.env` into the image — the root `Dockerfile` does not.
+There is none. This repository is not deployed to ECS and has no Dockerfile or CI pipeline. The output is the standalone `linux/arm64` binary from `build.sh`, run ad hoc on Linux arm64 (EC2); where it runs and how `initial_imports/` reaches the bulk-load host are open operational items tracked in the Dgraph repository's plan. The Go incremental image in ECR (with `td-go-rollback.json`) is the rollback artefact for the old incremental job and is unaffected by anything here.
