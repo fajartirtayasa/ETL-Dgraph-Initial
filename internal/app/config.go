@@ -81,12 +81,12 @@ func overrideWithEnv(cfg *Config) {
 }
 
 type Config struct {
-	App            *AppConfig         `yaml:"app" json:"app"`
-	Logger         *LoggerConfig      `yaml:"logger" json:"logger"`
-	DBClean        *PostgresConfig    `yaml:"db_clean" json:"db_clean"`
-	DBCleanReplica *PostgresConfig    `yaml:"db_clean_replica" json:"db_clean_replica"`
-	Initial        *InitialConfig     `yaml:"initial" json:"initial"`
-	AWS            *AWSConfig         `yaml:"aws" json:"aws"`
+	App            *AppConfig      `yaml:"app" json:"app"`
+	Logger         *LoggerConfig   `yaml:"logger" json:"logger"`
+	DBClean        *PostgresConfig `yaml:"db_clean" json:"db_clean"`
+	DBCleanReplica *PostgresConfig `yaml:"db_clean_replica" json:"db_clean_replica"`
+	Initial        *InitialConfig  `yaml:"initial" json:"initial"`
+	AWS            *AWSConfig      `yaml:"aws" json:"aws"`
 }
 
 type AppConfig struct {
