@@ -38,6 +38,12 @@ func run() error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
+	// Reject a bad APP_MODE before anything connects to PostgreSQL. app.NewConfig always sets cfg.App.
+	mode, err := etl.ParseMode(cfg.App.Mode)
+	if err != nil {
+		return err
+	}
+
 	logger := setupLogger(cfg.Logger)
 
 	primaryConfig := toDatabaseConfig(cfg.DBClean)
@@ -54,12 +60,6 @@ func run() error {
 			logger.Error("failed to close database", slog.Any("error", closeErr))
 		}
 	}()
-
-	appMode := ""
-	if cfg.App != nil {
-		appMode = cfg.App.Mode
-	}
-	mode := etl.ParseMode(appMode)
 
 	var workerCount, chunkSize int
 	if cfg.Initial != nil {

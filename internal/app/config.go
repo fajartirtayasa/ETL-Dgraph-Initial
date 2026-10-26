@@ -26,7 +26,11 @@ func NewConfig() (*Config, error) {
 
 // overrideWithEnv updates the config struct with values from environment variables.
 func overrideWithEnv(cfg *Config) {
-	// AppConfig overrides
+	// AppConfig overrides. A yaml without an app: section gets an empty AppConfig, so APP_MODE alone decides and a
+	// missing mode is reported by etl.ParseMode instead of panicking here.
+	if cfg.App == nil {
+		cfg.App = &AppConfig{}
+	}
 	cfg.App.Debug = util.GetEnvAsBool("APP_DEBUG", cfg.App.Debug)
 	cfg.App.Mode = util.GetEnv("APP_MODE", cfg.App.Mode)
 

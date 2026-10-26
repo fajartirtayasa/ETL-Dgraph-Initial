@@ -22,6 +22,10 @@ type Dependencies struct {
 }
 
 func Run(ctx context.Context, cfg RunnerConfig, deps Dependencies) error {
+	if cfg.Mode != ModeInitial {
+		return fmt.Errorf("unsupported ETL mode %q: only %q is supported", cfg.Mode, ModeInitial)
+	}
+
 	if deps.Primary == nil {
 		return fmt.Errorf("primary database adapter is required")
 	}
@@ -31,24 +35,18 @@ func Run(ctx context.Context, cfg RunnerConfig, deps Dependencies) error {
 		logger = slog.Default()
 	}
 
-	switch cfg.Mode {
-	case ModeInitial:
-		options := []initial.Option{initial.WithLogger(logger)}
-		if cfg.WorkerCount > 0 {
-			options = append(options, initial.WithWorkerCount(cfg.WorkerCount))
-		}
-		if cfg.ChunkSize > 0 {
-			options = append(options, initial.WithChunkSize(cfg.ChunkSize))
-		}
-
-		migrator, err := initial.NewMigrator(deps.Primary, cfg.OutputDir, options...)
-		if err != nil {
-			return fmt.Errorf("create initial migrator: %w", err)
-		}
-
-		return migrator.Run(ctx)
-
-	default:
-		return fmt.Errorf("unknown ETL mode: %s", cfg.Mode)
+	options := []initial.Option{initial.WithLogger(logger)}
+	if cfg.WorkerCount > 0 {
+		options = append(options, initial.WithWorkerCount(cfg.WorkerCount))
 	}
+	if cfg.ChunkSize > 0 {
+		options = append(options, initial.WithChunkSize(cfg.ChunkSize))
+	}
+
+	migrator, err := initial.NewMigrator(deps.Primary, cfg.OutputDir, options...)
+	if err != nil {
+		return fmt.Errorf("create initial migrator: %w", err)
+	}
+
+	return migrator.Run(ctx)
 }

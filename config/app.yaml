@@ -1,6 +1,6 @@
 app:
   debug: true # app debug
-  mode: "initial" # etl mode: initial or incremental
+  mode: "initial" # etl mode: only "initial" is accepted (APP_MODE overrides it); empty or anything else is rejected at startup
 
 logger:
   level: "debug" # logger level
