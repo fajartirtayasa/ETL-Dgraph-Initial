@@ -12,9 +12,7 @@ import (
 
 	"hara/traceability-dgraph-etl/internal/app"
 	"hara/traceability-dgraph-etl/internal/etl"
-	"hara/traceability-dgraph-etl/internal/etl/incremental"
 	"hara/traceability-dgraph-etl/pkg/database"
-	"hara/traceability-dgraph-etl/pkg/dgraph"
 	applogger "hara/traceability-dgraph-etl/pkg/logger"
 
 	"github.com/joho/godotenv"
@@ -40,6 +38,12 @@ func run() error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
+	// Reject a bad APP_MODE before anything connects to PostgreSQL. app.NewConfig always sets cfg.App.
+	mode, err := etl.ParseMode(cfg.App.Mode)
+	if err != nil {
+		return err
+	}
+
 	logger := setupLogger(cfg.Logger)
 
 	primaryConfig := toDatabaseConfig(cfg.DBClean)
@@ -57,26 +61,6 @@ func run() error {
 		}
 	}()
 
-	appMode := ""
-	if cfg.App != nil {
-		appMode = cfg.App.Mode
-	}
-	mode := etl.ParseMode(appMode)
-
-	var graph dgraph.Adapter
-	if mode == etl.ModeIncremental {
-		dgraphCfg := toDgraphConfig(cfg.Dgraph)
-		if dgraphCfg == nil {
-			return fmt.Errorf("dgraph config is required for incremental mode")
-		}
-
-		graph, err = dgraph.NewDgraphConnection(dgraphCfg)
-		if err != nil {
-			return fmt.Errorf("connect dgraph: %w", err)
-		}
-		defer graph.Close()
-	}
-
 	var workerCount, chunkSize int
 	if cfg.Initial != nil {
 		workerCount = cfg.Initial.WorkerCount
@@ -90,14 +74,8 @@ func run() error {
 		ChunkSize:   chunkSize,
 	}
 
-	if cfg.Incremental != nil {
-		runnerCfg.Incremental = toIncrementalConfig(cfg.Incremental)
-	}
-
-
 	deps := etl.Dependencies{
 		Primary: primaryDB,
-		Graph:   graph,
 		Logger:  logger,
 	}
 
@@ -159,62 +137,4 @@ func toDatabaseConfig(cfg *app.PostgresConfig) *database.Config {
 		TimeoutSecond:     cfg.TimeoutSecond,
 		Charset:           cfg.Charset,
 	}
-}
-
-func toDgraphConfig(cfg *app.DgraphConfig) *dgraph.Config {
-	if cfg == nil {
-		return nil
-	}
-
-	return &dgraph.Config{
-		Alphas:                  append([]string(nil), cfg.Alphas...),
-		Username:                cfg.Username,
-		Password:                cfg.Password,
-		SSLMode:                 cfg.SSLMode,
-		BearerToken:             cfg.BearerToken,
-		TimeoutSecond:           cfg.TimeoutSecond,
-		TransactionTimeoutSecond: cfg.TransactionTimeoutSecond,
-		MaxRetries:              cfg.MaxRetries,
-	}
-}
-
-func toIncrementalConfig(cfg *app.IncrementalConfig) *incremental.Config {
-	if cfg == nil {
-		return nil
-	}
-
-	out := &incremental.Config{
-		FetchChunkSize: cfg.FetchChunkSize,
-	}
-
-	if cfg.Removal != nil {
-		out.Removal = incremental.RemovalConfig{
-			LookupBatchSize:   cfg.Removal.LookupBatchSize,
-			LookupConcurrency: cfg.Removal.LookupConcurrency,
-			DeleteBatchSize:   cfg.Removal.DeleteBatchSize,
-			DeleteConcurrency: cfg.Removal.DeleteConcurrency,
-		}
-	}
-
-	if cfg.Events != nil {
-		out.Events = incremental.EventsConfig{
-			LookupBatchSize:   cfg.Events.LookupBatchSize,
-			LookupConcurrency: cfg.Events.LookupConcurrency,
-			UpsertBatchSize:   cfg.Events.UpsertBatchSize,
-			UpsertConcurrency: cfg.Events.UpsertConcurrency,
-		}
-	}
-
-	if cfg.Links != nil {
-		out.Links = incremental.LinksConfig{
-			LookupBatchSize:    cfg.Links.LookupBatchSize,
-			LookupConcurrency:  cfg.Links.LookupConcurrency,
-			UpsertBatchSize:    cfg.Links.UpsertBatchSize,
-			UpsertConcurrency:  cfg.Links.UpsertConcurrency,
-			CleanupBatchSize:   cfg.Links.CleanupBatchSize,
-			CleanupConcurrency: cfg.Links.CleanupConcurrency,
-		}
-	}
-
-	return out
 }

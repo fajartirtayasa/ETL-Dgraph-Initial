@@ -1,6 +1,6 @@
 app:
   debug: true # app debug
-  mode: "initial" # etl mode: initial or incremental
+  mode: "initial" # etl mode: only "initial" is accepted (APP_MODE overrides it); empty or anything else is rejected at startup
 
 logger:
   level: "debug" # logger level
@@ -30,36 +30,6 @@ db_clean_replica:
   max_life_time_ms: 3600 # database max lifetime in millisecond
   timeout_second: 10 # database timeout in second
   charset: "utf8" # database charset
-
-dgraph:
-  alphas: [] # dgraph alpha endpoints
-  username: "admin" # dgraph username
-  password: "password" # dgraph password
-  ssl_mode: "disable" # ssl mode: disable, require, verify-ca
-  bearer_token: "" # optional bearer token for authentication
-  timeout_second: 30 # general connection timeout in seconds
-  transaction_timeout_second: 0 # transaction-specific timeout in seconds (0 = use default 45s, or timeout_second if smaller)
-  max_retries: 100 # maximum retry attempts
-
-incremental:
-  fetch_chunk_size: 1000 # number of records to fetch per chunk during incremental sync
-  removal:
-    lookup_batch_size: 100 # batch size for Dgraph lookup requests when removing events
-    lookup_concurrency: 4 # number of concurrent lookup workers when removing events
-    delete_batch_size: 100 # batch size for Dgraph delete mutations when removing events
-    delete_concurrency: 4 # number of concurrent delete workers when removing events
-  events:
-    lookup_batch_size: 100 # batch size for Dgraph lookup requests when syncing events
-    lookup_concurrency: 4 # number of concurrent lookup workers when syncing events
-    upsert_batch_size: 10 # batch size for Dgraph upsert mutations when syncing events
-    upsert_concurrency: 4 # number of concurrent upsert workers when syncing events
-  links:
-    lookup_batch_size: 100 # batch size for Dgraph lookup requests when syncing links
-    lookup_concurrency: 4 # number of concurrent lookup workers when syncing links
-    upsert_batch_size: 10 # batch size for Dgraph upsert mutations when syncing links
-    upsert_concurrency: 4 # number of concurrent upsert workers when syncing links
-    cleanup_batch_size: 100 # batch size when removing stale links from events
-    cleanup_concurrency: 4 # number of concurrent workers for removing stale links
 
 aws:
   s3:

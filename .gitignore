@@ -38,3 +38,6 @@ initial_imports/
 
 # exec app
 traceability-dgraph-etl
+
+# standalone binary and its config, written by build.sh
+out/

@@ -26,7 +26,11 @@ func NewConfig() (*Config, error) {
 
 // overrideWithEnv updates the config struct with values from environment variables.
 func overrideWithEnv(cfg *Config) {
-	// AppConfig overrides
+	// AppConfig overrides. A yaml without an app: section gets an empty AppConfig, so APP_MODE alone decides and a
+	// missing mode is reported by etl.ParseMode instead of panicking here.
+	if cfg.App == nil {
+		cfg.App = &AppConfig{}
+	}
 	cfg.App.Debug = util.GetEnvAsBool("APP_DEBUG", cfg.App.Debug)
 	cfg.App.Mode = util.GetEnv("APP_MODE", cfg.App.Mode)
 
@@ -59,55 +63,12 @@ func overrideWithEnv(cfg *Config) {
 	cfg.DBCleanReplica.TimeoutSecond = util.GetEnvAsInt("DB_CLEAN_REPLICA_TIMEOUT_SECOND", cfg.DBCleanReplica.TimeoutSecond)
 	cfg.DBCleanReplica.Charset = util.GetEnv("DB_CLEAN_REPLICA_CHARSET", cfg.DBCleanReplica.Charset)
 
-	// Dgraph Config overrides
-	cfg.Dgraph.Alphas = util.GetEnvAsStringSlice("DGRAPH_ALPHAS", cfg.Dgraph.Alphas)
-	cfg.Dgraph.Username = util.GetEnv("DGRAPH_USERNAME", cfg.Dgraph.Username)
-	cfg.Dgraph.Password = util.GetEnv("DGRAPH_PASSWORD", cfg.Dgraph.Password)
-	cfg.Dgraph.SSLMode = util.GetEnv("DGRAPH_SSL_MODE", cfg.Dgraph.SSLMode)
-	cfg.Dgraph.BearerToken = util.GetEnv("DGRAPH_BEARER_TOKEN", cfg.Dgraph.BearerToken)
-	cfg.Dgraph.TimeoutSecond = util.GetEnvAsInt("DGRAPH_TIMEOUT_SECOND", cfg.Dgraph.TimeoutSecond)
-	cfg.Dgraph.TransactionTimeoutSecond = util.GetEnvAsInt("DGRAPH_TRANSACTION_TIMEOUT_SECOND", cfg.Dgraph.TransactionTimeoutSecond)
-	cfg.Dgraph.MaxRetries = util.GetEnvAsInt("DGRAPH_MAX_RETRIES", cfg.Dgraph.MaxRetries)
-
-	// Incremental overrides
-	if cfg.Incremental == nil {
-		cfg.Incremental = &IncrementalConfig{}
-	}
-
 	// Initial overrides
 	if cfg.Initial == nil {
 		cfg.Initial = &InitialConfig{}
 	}
 	cfg.Initial.WorkerCount = util.GetEnvAsInt("INITIAL_WORKER_COUNT", cfg.Initial.WorkerCount)
 	cfg.Initial.ChunkSize = util.GetEnvAsInt("INITIAL_CHUNK_SIZE", cfg.Initial.ChunkSize)
-
-	if cfg.Incremental.Removal == nil {
-		cfg.Incremental.Removal = &IncrementalRemovalConfig{}
-	}
-	if cfg.Incremental.Events == nil {
-		cfg.Incremental.Events = &IncrementalEventsConfig{}
-	}
-	if cfg.Incremental.Links == nil {
-		cfg.Incremental.Links = &IncrementalLinksConfig{}
-	}
-
-	cfg.Incremental.Removal.LookupBatchSize = util.GetEnvAsInt("INCREMENTAL_REMOVAL_LOOKUP_BATCH_SIZE", cfg.Incremental.Removal.LookupBatchSize)
-	cfg.Incremental.Removal.LookupConcurrency = util.GetEnvAsInt("INCREMENTAL_REMOVAL_LOOKUP_CONCURRENCY", cfg.Incremental.Removal.LookupConcurrency)
-	cfg.Incremental.Removal.DeleteBatchSize = util.GetEnvAsInt("INCREMENTAL_REMOVAL_DELETE_BATCH_SIZE", cfg.Incremental.Removal.DeleteBatchSize)
-	cfg.Incremental.Removal.DeleteConcurrency = util.GetEnvAsInt("INCREMENTAL_REMOVAL_DELETE_CONCURRENCY", cfg.Incremental.Removal.DeleteConcurrency)
-
-	cfg.Incremental.Events.LookupBatchSize = util.GetEnvAsInt("INCREMENTAL_EVENTS_LOOKUP_BATCH_SIZE", cfg.Incremental.Events.LookupBatchSize)
-	cfg.Incremental.Events.LookupConcurrency = util.GetEnvAsInt("INCREMENTAL_EVENTS_LOOKUP_CONCURRENCY", cfg.Incremental.Events.LookupConcurrency)
-	cfg.Incremental.Events.UpsertBatchSize = util.GetEnvAsInt("INCREMENTAL_EVENTS_UPSERT_BATCH_SIZE", cfg.Incremental.Events.UpsertBatchSize)
-	cfg.Incremental.Events.UpsertConcurrency = util.GetEnvAsInt("INCREMENTAL_EVENTS_UPSERT_CONCURRENCY", cfg.Incremental.Events.UpsertConcurrency)
-
-	cfg.Incremental.Links.LookupBatchSize = util.GetEnvAsInt("INCREMENTAL_LINKS_LOOKUP_BATCH_SIZE", cfg.Incremental.Links.LookupBatchSize)
-	cfg.Incremental.Links.LookupConcurrency = util.GetEnvAsInt("INCREMENTAL_LINKS_LOOKUP_CONCURRENCY", cfg.Incremental.Links.LookupConcurrency)
-	cfg.Incremental.Links.UpsertBatchSize = util.GetEnvAsInt("INCREMENTAL_LINKS_UPSERT_BATCH_SIZE", cfg.Incremental.Links.UpsertBatchSize)
-	cfg.Incremental.Links.UpsertConcurrency = util.GetEnvAsInt("INCREMENTAL_LINKS_UPSERT_CONCURRENCY", cfg.Incremental.Links.UpsertConcurrency)
-	cfg.Incremental.Links.CleanupBatchSize = util.GetEnvAsInt("INCREMENTAL_LINKS_CLEANUP_BATCH_SIZE", cfg.Incremental.Links.CleanupBatchSize)
-	cfg.Incremental.Links.CleanupConcurrency = util.GetEnvAsInt("INCREMENTAL_LINKS_CLEANUP_CONCURRENCY", cfg.Incremental.Links.CleanupConcurrency)
-	cfg.Incremental.FetchChunkSize = util.GetEnvAsInt("INCREMENTAL_FETCH_CHUNK_SIZE", cfg.Incremental.FetchChunkSize)
 
 	// AWS S3 overrides
 	cfg.AWS.S3.Region = util.GetEnv("AWS_S3_REGION", cfg.AWS.S3.Region)
@@ -120,14 +81,12 @@ func overrideWithEnv(cfg *Config) {
 }
 
 type Config struct {
-	App            *AppConfig         `yaml:"app" json:"app"`
-	Logger         *LoggerConfig      `yaml:"logger" json:"logger"`
-	DBClean        *PostgresConfig    `yaml:"db_clean" json:"db_clean"`
-	DBCleanReplica *PostgresConfig    `yaml:"db_clean_replica" json:"db_clean_replica"`
-	Dgraph         *DgraphConfig      `yaml:"dgraph" json:"dgraph"`
-	Initial        *InitialConfig     `yaml:"initial" json:"initial"`
-	Incremental    *IncrementalConfig `yaml:"incremental" json:"incremental"`
-	AWS            *AWSConfig         `yaml:"aws" json:"aws"`
+	App            *AppConfig      `yaml:"app" json:"app"`
+	Logger         *LoggerConfig   `yaml:"logger" json:"logger"`
+	DBClean        *PostgresConfig `yaml:"db_clean" json:"db_clean"`
+	DBCleanReplica *PostgresConfig `yaml:"db_clean_replica" json:"db_clean_replica"`
+	Initial        *InitialConfig  `yaml:"initial" json:"initial"`
+	AWS            *AWSConfig      `yaml:"aws" json:"aws"`
 }
 
 type AppConfig struct {
@@ -153,50 +112,9 @@ type PostgresConfig struct {
 	Charset           string `yaml:"charset" json:"charset"`
 }
 
-type DgraphConfig struct {
-	Alphas                   []string `yaml:"alphas" json:"alphas"`
-	Username                 string   `yaml:"username" json:"username"`
-	Password                 string   `yaml:"password" json:"password"`
-	SSLMode                  string   `yaml:"ssl_mode" json:"ssl_mode"`
-	BearerToken              string   `yaml:"bearer_token" json:"bearer_token"`
-	TimeoutSecond            int      `yaml:"timeout_second" json:"timeout_second"`
-	TransactionTimeoutSecond int      `yaml:"transaction_timeout_second" json:"transaction_timeout_second"`
-	MaxRetries               int      `yaml:"max_retries" json:"max_retries"`
-}
-
 type InitialConfig struct {
 	WorkerCount int `yaml:"worker_count" json:"worker_count"`
 	ChunkSize   int `yaml:"chunk_size" json:"chunk_size"`
-}
-
-type IncrementalConfig struct {
-	Removal        *IncrementalRemovalConfig `yaml:"removal" json:"removal"`
-	Events         *IncrementalEventsConfig  `yaml:"events" json:"events"`
-	Links          *IncrementalLinksConfig   `yaml:"links" json:"links"`
-	FetchChunkSize int                       `yaml:"fetch_chunk_size" json:"fetch_chunk_size"`
-}
-
-type IncrementalRemovalConfig struct {
-	LookupBatchSize   int `yaml:"lookup_batch_size" json:"lookup_batch_size"`
-	LookupConcurrency int `yaml:"lookup_concurrency" json:"lookup_concurrency"`
-	DeleteBatchSize   int `yaml:"delete_batch_size" json:"delete_batch_size"`
-	DeleteConcurrency int `yaml:"delete_concurrency" json:"delete_concurrency"`
-}
-
-type IncrementalEventsConfig struct {
-	LookupBatchSize   int `yaml:"lookup_batch_size" json:"lookup_batch_size"`
-	LookupConcurrency int `yaml:"lookup_concurrency" json:"lookup_concurrency"`
-	UpsertBatchSize   int `yaml:"upsert_batch_size" json:"upsert_batch_size"`
-	UpsertConcurrency int `yaml:"upsert_concurrency" json:"upsert_concurrency"`
-}
-
-type IncrementalLinksConfig struct {
-	LookupBatchSize    int `yaml:"lookup_batch_size" json:"lookup_batch_size"`
-	LookupConcurrency  int `yaml:"lookup_concurrency" json:"lookup_concurrency"`
-	UpsertBatchSize    int `yaml:"upsert_batch_size" json:"upsert_batch_size"`
-	UpsertConcurrency  int `yaml:"upsert_concurrency" json:"upsert_concurrency"`
-	CleanupBatchSize   int `yaml:"cleanup_batch_size" json:"cleanup_batch_size"`
-	CleanupConcurrency int `yaml:"cleanup_concurrency" json:"cleanup_concurrency"`
 }
 
 type AWSConfig struct {

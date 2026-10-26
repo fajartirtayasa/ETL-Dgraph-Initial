@@ -1,9 +1,12 @@
-package incremental
+package initial
 
-// stubDB is an L2 stand-in for database.Adapter. database.Adapter.QueryRows
-// returns a concrete *sql.Rows, so the stub is a minimal database/sql driver
-// whose rows come from a Go function instead of a server. It answers only
-// what an L2 test scripts; the real SQL is exercised at L3.
+// stubDB stands in for database.Adapter in tests that need *sql.Rows without a server.
+// database.Adapter.QueryRows returns a concrete *sql.Rows, so the stub is a minimal database/sql driver
+// (connector, conn, rows) whose rows come from a Go function. Exec, transactions and prepared statements
+// are not supported.
+//
+// Ported from internal/etl/incremental/parity_stubdb_test.go (blob 396b66d, last changed in 79a38f0,
+// removed with the incremental mode), without the incremental-only helpers stringsArg and nullable.
 
 import (
 	"context"
@@ -51,7 +54,7 @@ func (s *stubDB) Ping(context.Context) error { return nil }
 func (s *stubDB) HealthCheck() error         { return nil }
 func (s *stubDB) Close() error               { return s.db.Close() }
 
-func errStub(op string) error { return fmt.Errorf("stubDB: %s not supported at L2", op) }
+func errStub(op string) error { return fmt.Errorf("stubDB: %s not supported", op) }
 
 type stubConnector struct{ fn stubQueryFunc }
 
@@ -72,8 +75,7 @@ func (c *stubConn) Prepare(string) (driver.Stmt, error) { return nil, errStub("P
 func (c *stubConn) Close() error                        { return nil }
 func (c *stubConn) Begin() (driver.Tx, error)           { return nil, errStub("Begin") }
 
-// CheckNamedValue passes every argument through unchanged, so a []string
-// bound to `= ANY($1)` reaches the stub function as-is (as pgx accepts it).
+// CheckNamedValue passes every argument through unchanged, so the stub function sees exactly what was bound.
 func (c *stubConn) CheckNamedValue(*driver.NamedValue) error { return nil }
 
 func (c *stubConn) QueryContext(_ context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
@@ -98,25 +100,4 @@ func (r *stubRows) Next(dest []driver.Value) error {
 	copy(dest, r.res.Rows[r.i])
 	r.i++
 	return nil
-}
-
-// stringsArg returns the []string bound to the first placeholder.
-func stringsArg(args []driver.NamedValue) ([]string, error) {
-	if len(args) != 1 {
-		return nil, fmt.Errorf("want 1 argument, got %d", len(args))
-	}
-	ids, ok := args[0].Value.([]string)
-	if !ok {
-		return nil, fmt.Errorf("argument is %T, want []string", args[0].Value)
-	}
-	return ids, nil
-}
-
-// nullable converts a Go value into a driver.Value, mapping nil pointers to
-// SQL NULL.
-func nullable[T any](v *T) driver.Value {
-	if v == nil {
-		return nil
-	}
-	return *v
 }
