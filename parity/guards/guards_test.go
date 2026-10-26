@@ -5,9 +5,11 @@
 //
 //	(a) no tracked database dump or bulk extract outside parity/fixture/
 //	(b) no tracked .env or credential-bearing file, no secret shape or high-entropy literal in tracked text
-//	(c) every fixture row carries the SYN- marker, and nothing in the fixture or goldens looks real
+//	(c) every fixture row carries the SYN- marker, and nothing in the fixture looks real
 //	(d) the §8.5 key contract is a Python-repository check: this Go code has no Secrets Manager
 //	    loader (pkg/aws is S3-only), so there is no required-key list here to compare
+//	(e) the six fixture files are frozen: each still matches the SHA-256 pinned below, the same six values
+//	    the Python repository pins in tests/fixture.lock
 //
 // Every check has a negative test (TestNegative*) that plants what it forbids. The Python repository
 // (ETL-Dgraph-Incremental tests/guards.py) implements the same rules.
@@ -16,7 +18,9 @@ package guards
 import (
 	"bytes"
 	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -505,18 +509,52 @@ func TestGuardC_EveryFixtureRowIsSyntheticAndNothingLooksReal(t *testing.T) {
 	v := seedViolations(rows)
 	v = append(v, graphSeedViolations(read("parity/fixture/graph_seed.json"))...)
 	v = append(v, jsonDataHits("scenarios.json", read("parity/fixture/scenarios.json"))...)
-	goldens := 0
+	// The golden corpus was removed (it lives on in the Python repository's tests/golden and at commit b487294).
+	// The scan stays for any golden JSON that is ever tracked here again; none tracked means nothing to scan.
 	for _, p := range trackedFiles(t, root) {
 		if strings.HasPrefix(p, "parity/golden/") && strings.HasSuffix(p, ".json") {
 			v = append(v, jsonDataHits(p, read(p))...)
-			goldens++
 		}
-	}
-	if goldens != 28 {
-		t.Fatalf("expected the 28 goldens, found %d", goldens)
 	}
 	if len(v) > 0 {
 		t.Fatalf("fixture violations:\n%s", strings.Join(v, "\n"))
+	}
+}
+
+// ---- (e) the frozen fixture ---------------------------------------------------------------------------
+// The Python repository reads parity/fixture in place and pins the same six hashes in tests/fixture.lock; a
+// change to either side must be made in both, which the freeze forbids. Paths are relative to parity/fixture.
+var fixtureLock = []struct{ path, hash string }{
+	{"sql/01_schema.sql", "ecaab79678dab1e34e9bccd218d5d9e111cf2659be6ea66968f576c631ecd5cd"},
+	{"sql/02_seed.sql", "62df94ff0139b71e44dc7bc83bb93597e251fbc0b1e1bd059376a6d5ec16fc03"},
+	{"graph_seed.json", "bd7729cc5f176d9e3902b71932be2bfca7357b6e24049516cbbd6bb3edd77799"},
+	{"scenarios.json", "1deeb55a4e0fbbc08e2c87b4bcde878bbc86cf2a60a7f034f47464fa1f0bb9b6"},
+	{"compose.yaml", "4a47fe237d949974b2d43f9a6ececbff9ba13a42582b5f4c2de831a26a9deb83"},
+	{"rebuild.sh", "4625c84d6ea7edeaaa18691e1205a76a173049538b7daefb6a8d92f0d49000e1"},
+}
+
+// fixtureChecksumViolations hashes the working-tree bytes of each pinned file under dir (parity/fixture/ in
+// the real guard) and reports every file that is missing or whose SHA-256 differs.
+func fixtureChecksumViolations(dir string) []string {
+	var out []string
+	for _, f := range fixtureLock {
+		raw, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(f.path)))
+		if err != nil {
+			out = append(out, fmt.Sprintf("%s: %v", f.path, err))
+			continue
+		}
+		sum := sha256.Sum256(raw)
+		if got := hex.EncodeToString(sum[:]); got != f.hash {
+			out = append(out, fmt.Sprintf("%s: sha256 %s, pinned %s", f.path, got, f.hash))
+		}
+	}
+	return out
+}
+
+func TestGuardE_FrozenFixtureMatchesItsPinnedChecksums(t *testing.T) {
+	if v := fixtureChecksumViolations(filepath.Join(repoRoot(t), "parity", "fixture")); len(v) > 0 {
+		t.Fatalf("the fixture is frozen (the Python repository pins the same hashes in tests/fixture.lock):\n%s",
+			strings.Join(v, "\n"))
 	}
 }
 
@@ -654,6 +692,48 @@ func TestNegativeC_UnmarkedGraphSeedIsReported(t *testing.T) {
 	raw := []byte(`{"nodes":[{"unique_id":"SYN-A"},{"unique_id":"EV-77"}],"edges":[{"from":"SYN-A","to":"BL-1"}]}`)
 	if v := graphSeedViolations(raw); len(v) != 2 {
 		t.Fatalf("got %v", v)
+	}
+}
+
+// copyFixture copies the six pinned files into a fresh temp dir; the one named `changed` (if any) gets its first
+// byte flipped, so a copy differs from the pinned bytes in exactly one file.
+func copyFixture(t *testing.T, changed string) string {
+	t.Helper()
+	src := filepath.Join(repoRoot(t), "parity", "fixture")
+	dir := t.TempDir()
+	for _, f := range fixtureLock {
+		raw, err := os.ReadFile(filepath.Join(src, filepath.FromSlash(f.path)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if f.path == changed {
+			raw[0] ^= 0x01
+		}
+		dst := filepath.Join(dir, filepath.FromSlash(f.path))
+		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(dst, raw, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return dir
+}
+
+func TestNegativeE_PlantedChangedFixtureIsReported(t *testing.T) {
+	// the untouched copy is clean, so a report below can only come from the planted byte
+	if v := fixtureChecksumViolations(copyFixture(t, "")); len(v) > 0 {
+		t.Fatalf("an unchanged copy was reported: %v", v)
+	}
+	for _, f := range fixtureLock {
+		got := fixtureChecksumViolations(copyFixture(t, f.path))
+		if len(got) != 1 || !strings.HasPrefix(got[0], f.path+": sha256 ") {
+			t.Errorf("one flipped byte in %s: got %v", f.path, got)
+		}
+	}
+	// a pinned file that is absent is reported too, one line per file
+	if got := fixtureChecksumViolations(t.TempDir()); len(got) != len(fixtureLock) {
+		t.Errorf("an empty directory reported %d of %d files: %v", len(got), len(fixtureLock), got)
 	}
 }
 
