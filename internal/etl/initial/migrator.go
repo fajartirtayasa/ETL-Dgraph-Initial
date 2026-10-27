@@ -18,12 +18,13 @@ import (
 const defaultOutputDir = "initial_imports"
 
 type Migrator struct {
-	db          database.Adapter
-	interner    *common.StringInterner
-	outputDir   string
-	workerCount int
-	chunkSize   int
-	log         *slog.Logger
+	db            database.Adapter
+	interner      *common.StringInterner
+	outputDir     string
+	workerCount   int
+	chunkSize     int
+	stampSyncTime bool
+	log           *slog.Logger
 }
 
 type Option func(*Migrator)
@@ -41,6 +42,14 @@ func WithChunkSize(size int) Option {
 		if size > 0 {
 			m.chunkSize = size
 		}
+	}
+}
+
+// WithSyncTimeStamping makes Run stamp sync_time on the exported rows once the RDF is complete (sync_time.go). It is
+// off unless set: the export alone never writes to PostgreSQL.
+func WithSyncTimeStamping(enabled bool) Option {
+	return func(m *Migrator) {
+		m.stampSyncTime = enabled
 	}
 }
 
@@ -98,7 +107,7 @@ func (m *Migrator) Run(ctx context.Context) error {
 		return fmt.Errorf("create output directory: %w", err)
 	}
 
-	m.log.Info("starting initial migration", slog.String("output", m.outputDir), slog.Int("workers", m.workerCount), slog.Int("chunk_size", m.chunkSize))
+	m.log.Info("starting initial migration", slog.String("output", m.outputDir), slog.Int("workers", m.workerCount), slog.Int("chunk_size", m.chunkSize), slog.Bool("stamp_sync_time", m.stampSyncTime))
 
 	agg, err := newAggregator(m.outputDir, m.interner, m.chunkSize)
 	if err != nil {
@@ -118,7 +127,19 @@ func (m *Migrator) Run(ctx context.Context) error {
 		return fmt.Errorf("stream links: %w", err)
 	}
 
-	m.log.Info("initial migration completed", slog.String("output", filepath.Clean(m.outputDir)))
+	// Both writers are closed, so every RDF file is complete on disk. Only now may the source rows be stamped.
+	output := filepath.Clean(m.outputDir)
+	m.log.Info("rdf export completed", slog.String("output", output))
+
+	if !m.stampSyncTime {
+		m.log.Info("sync_time stamping disabled: no source row was changed")
+	} else if err := stampSyncTime(ctx, m.db, m.log); err != nil {
+		return fmt.Errorf("the RDF export in %s is complete and kept, but stamping sync_time failed; "+
+			"re-run the stamping statements (Dgraph REFACTOR_PLAN.md §9.0.1) before events_bc or links_bc change: %w",
+			output, err)
+	}
+
+	m.log.Info("initial migration completed", slog.String("output", output))
 	return nil
 }
 

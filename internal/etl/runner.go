@@ -10,10 +10,11 @@ import (
 )
 
 type RunnerConfig struct {
-	Mode        Mode
-	OutputDir   string
-	WorkerCount int
-	ChunkSize   int
+	Mode          Mode
+	OutputDir     string
+	WorkerCount   int
+	ChunkSize     int
+	StampSyncTime bool
 }
 
 type Dependencies struct {
@@ -35,7 +36,7 @@ func Run(ctx context.Context, cfg RunnerConfig, deps Dependencies) error {
 		logger = slog.Default()
 	}
 
-	options := []initial.Option{initial.WithLogger(logger)}
+	options := []initial.Option{initial.WithLogger(logger), initial.WithSyncTimeStamping(cfg.StampSyncTime)}
 	if cfg.WorkerCount > 0 {
 		options = append(options, initial.WithWorkerCount(cfg.WorkerCount))
 	}
