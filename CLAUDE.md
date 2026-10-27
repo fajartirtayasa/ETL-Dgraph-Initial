@@ -18,7 +18,7 @@ Three repositories sit side by side as sibling folders, and this one needs the o
 
 `command.txt` is the original requirements brief from the repo owner (both strategies, field mappings, technical constraints). It is kept unchanged because the Python repository relies on it for field mappings; only the initial strategy applies to this code. Read it before changing export semantics. The owner maintains technical flow documentation separately — do not generate flow/architecture docs unless asked.
 
-`BASE_KNOWLEDGE.md` is a historical snapshot at commit `b487294` (it still describes the incremental mode and the ECS deployment). Do not treat it as current.
+`BASE_KNOWLEDGE.md` is the deeper reference for the current code: exact queries and statements, the stamp, the tests and the knowledge gaps. It was brought up to date on 2026-10-28. Its earlier version, which describes the removed incremental mode and the ECS deployment, is `git show b487294:BASE_KNOWLEDGE.md`.
 
 ## Commands
 
