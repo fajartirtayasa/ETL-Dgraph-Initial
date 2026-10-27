@@ -35,7 +35,7 @@ Three sibling repositories work together:
 | Folder | Role |
 |---|---|
 | `ETL-Dgraph-Initial` | this repository: the Go export and the baseline stamp |
-| `ETL-Dgraph-Incremental` | the Python incremental ETL; owns the canonical `schema.dql` and the bulk-load runbook (`deploy/staging/INV7_BULK_LOAD.md`); reads this repository's synthetic fixture in place |
+| `ETL-Dgraph-Incremental` | the Python incremental ETL; owns the canonical `schema.dql` and the bulk-load runbook (`INV7_BULK_LOAD.md` under `deploy/staging/`); reads this repository's synthetic fixture in place |
 | `Dgraph` | the live `REFACTOR_PLAN.md` and `REFACTOR_ASSESSMENT.md` |
 
 **`command.txt`** is the owner's original requirements brief for both strategies (initial and incremental),
@@ -392,7 +392,7 @@ Validated on 2026-10-28 (branch `feat/initial-stamp-sync-time`):
 There is no deployment: no Dockerfile, no image, no CI, no ECS task. The output is the standalone `linux/arm64`
 binary from `build.sh`, run ad hoc on Linux arm64 (EC2) from a directory holding `config/`.
 
-The bootstrap order is in `REFACTOR_PLAN.md` §9.0 and the Python repository's `deploy/staging/INV7_BULK_LOAD.md`:
+The bootstrap order is in `REFACTOR_PLAN.md` §9.0 and the Python repository's bulk-load runbook (`INV7_BULK_LOAD.md` under `deploy/staging/`):
 1. Run Initial (export + stamp), with `events_bc` / `links_bc` frozen.
 2. Confirm the stamp: exit 0, and a `sync_time stamped` log line per table.
 3. Run `dgraph bulk` with the Python repository's `schema.dql`.
