@@ -8,19 +8,27 @@ import (
 	"hara/traceability-dgraph-etl/pkg/database"
 )
 
-const eventsQuery = `
+// exportedLinksFilter selects every link the export writes: a valid link with a valid event at both ends. linksQuery
+// exports these links, eventsQuery exports their endpoints, and the sync_time statements (sync_time.go) stamp the same
+// rows, so all of them are built from this one text.
+const exportedLinksFilter = `
+FROM links_bc l
+JOIN events_bc e1 ON l.event1_id = e1.unique_id AND e1.status = 'valid'
+JOIN events_bc e2 ON l.event2_id = e2.unique_id AND e2.status = 'valid'
+WHERE l.status = 'valid'`
+
+// exportedEventIDsCTE names, as UnsyncedUniqueIDs, the unique_ids at either end of an exported link.
+const exportedEventIDsCTE = `
 WITH UnsyncedLinks AS (
-		SELECT l.event1_id, l.event2_id
-		FROM links_bc l
-		JOIN events_bc e1 ON l.event1_id = e1.unique_id AND e1.status = 'valid'
-		JOIN events_bc e2 ON l.event2_id = e2.unique_id AND e2.status = 'valid'
-		WHERE l.status = 'valid'
+    SELECT l.event1_id, l.event2_id` + exportedLinksFilter + `
 ),
 UnsyncedUniqueIDs AS (
     SELECT event1_id AS unique_id FROM UnsyncedLinks
     UNION
     SELECT event2_id AS unique_id FROM UnsyncedLinks
-),
+)`
+
+const eventsQuery = exportedEventIDsCTE + `,
 MasterMill AS (
     SELECT uml_id, mill_id FROM master_mill GROUP BY uml_id, mill_id
 )
@@ -46,7 +54,7 @@ SELECT
     e.purchase_order,
     e.uml_id,
     mm.mill_id,
-		e.location_id,
+    e.location_id,
     e.vendor,
     e.source,
     loc.subject_type AS location_subject_type,

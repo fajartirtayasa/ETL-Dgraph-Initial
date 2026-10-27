@@ -23,11 +23,7 @@ SELECT
 	l.role,
 	l.qty,
 	l.unit,
-	l.source
-FROM links_bc l
-JOIN events_bc e1 ON l.event1_id = e1.unique_id AND e1.status = 'valid'
-JOIN events_bc e2 ON l.event2_id = e2.unique_id AND e2.status = 'valid'
-WHERE l.status = 'valid'
+	l.source` + exportedLinksFilter + `
 `
 
 type linkRow struct {
