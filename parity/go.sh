@@ -11,8 +11,10 @@
 # mounted side by side as /work/<repo> (this one read-write, the sibling read-only), working directory
 # /work/ETL-Dgraph-Initial, so the same relative path resolves there.
 #
-# L3 tests read PARITY_PG_URL. Inside the container it defaults to the
-# fixture started by parity/fixture/rebuild.sh, reached via the host gateway.
+# The stamping rehearsal (internal/etl/initial/stamp_rehearsal_test.go) reads
+# PARITY_PG_URL and clones that database; inside the container it defaults to
+# the fixture started by parity/fixture/rebuild.sh, reached via the host
+# gateway. PARITY_REQUIRE_L3=1 turns its skip (no database) into a failure.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 

@@ -29,8 +29,17 @@ and mounts both repositories side by side as `/work/<repo>`; it stops with an er
 | Start the fixture database (for the Python repository) | `parity/fixture/rebuild.sh` |
 
 `rebuild.sh` starts PostgreSQL 15.17 on `127.0.0.1:55432` with a tmpfs data directory, loads `fixture/sql/*.sql` and
-returns once the seed is queryable. Trust auth, localhost only, no credentials. The Go suite no longer reads a
-database; `go.sh` still forwards `PARITY_PG_URL` and `PARITY_REQUIRE_L3`, which nothing in it uses any more.
+returns once the seed is queryable. Trust auth, localhost only, no credentials.
+
+One Go test reads a database: the **stamping rehearsal** (`internal/etl/initial/stamp_rehearsal_test.go`). It reads
+`PARITY_PG_URL`, which `go.sh` sets to this fixture. It clones `parity_fixture` with `CREATE DATABASE … TEMPLATE`, runs
+the export and its `sync_time` stamping against the clone, and drops the clone. It never writes to `parity_fixture`,
+which the Python repository's tests clone in turn. Without a reachable database it skips; with
+`PARITY_REQUIRE_L3=1` that is a failure instead:
+
+| What | Command |
+|---|---|
+| Rehearse the stamping on a clone | `parity/fixture/rebuild.sh`, then `PARITY_REQUIRE_L3=1 parity/go.sh test ./internal/etl/initial -run StampRehearsal -v` |
 
 ## Layout
 
@@ -105,6 +114,8 @@ this repository does not run them.
 |---|---|
 | `internal/etl/mode_test.go` | `APP_MODE` parsing: only `initial` (trimmed, case-insensitive) is accepted; the exact error text for every rejection |
 | `internal/etl/initial/schema_test.go` | the mirror test (`schema.dql` byte-identical to the canonical one) and the predicate test (the export emits exactly the schema's predicates and types, plus `links`); reads `../ETL-Dgraph-Incremental/schema.dql` and fails if it is missing |
+| `internal/etl/stamp_test.go`, `internal/etl/initial/sync_time_test.go` | `INITIAL_STAMP_SYNC_TIME` parsing; the stamping statements reuse the export filters; one statement per table, events first; stamping only after the RDF is complete; the RDF is kept when stamping fails |
+| `internal/etl/initial/stamp_rehearsal_test.go` | the stamping rehearsal on a disposable fixture clone (above): exactly the exported, valid, unstamped rows are stamped, and nothing changes with stamping disabled |
 | `parity/fixture/gen/main_test.go` | the generator reproduces the committed fixture; every seed identifier is `SYN-` marked |
 | `parity/guards/guards_test.go` | the guards below |
 | `internal/etl/common`, `pkg/util` | unit tests of the helpers |
