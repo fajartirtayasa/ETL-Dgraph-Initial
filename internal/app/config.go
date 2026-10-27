@@ -69,6 +69,8 @@ func overrideWithEnv(cfg *Config) {
 	}
 	cfg.Initial.WorkerCount = util.GetEnvAsInt("INITIAL_WORKER_COUNT", cfg.Initial.WorkerCount)
 	cfg.Initial.ChunkSize = util.GetEnvAsInt("INITIAL_CHUNK_SIZE", cfg.Initial.ChunkSize)
+	// Kept as text: etl.ParseStampSyncTime treats blank as the default (true) and rejects a value that is not a boolean.
+	cfg.Initial.StampSyncTime = util.GetEnv("INITIAL_STAMP_SYNC_TIME", cfg.Initial.StampSyncTime)
 
 	// AWS S3 overrides
 	cfg.AWS.S3.Region = util.GetEnv("AWS_S3_REGION", cfg.AWS.S3.Region)
@@ -113,8 +115,9 @@ type PostgresConfig struct {
 }
 
 type InitialConfig struct {
-	WorkerCount int `yaml:"worker_count" json:"worker_count"`
-	ChunkSize   int `yaml:"chunk_size" json:"chunk_size"`
+	WorkerCount   int    `yaml:"worker_count" json:"worker_count"`
+	ChunkSize     int    `yaml:"chunk_size" json:"chunk_size"`
+	StampSyncTime string `yaml:"stamp_sync_time" json:"stamp_sync_time"`
 }
 
 type AWSConfig struct {

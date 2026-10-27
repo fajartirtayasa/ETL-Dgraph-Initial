@@ -44,6 +44,12 @@ func run() error {
 		return err
 	}
 
+	// INITIAL_STAMP_SYNC_TIME is checked just as strictly, and as early. app.NewConfig always sets cfg.Initial.
+	stampSyncTime, err := etl.ParseStampSyncTime(cfg.Initial.StampSyncTime)
+	if err != nil {
+		return err
+	}
+
 	logger := setupLogger(cfg.Logger)
 
 	primaryConfig := toDatabaseConfig(cfg.DBClean)
@@ -68,10 +74,11 @@ func run() error {
 	}
 
 	runnerCfg := etl.RunnerConfig{
-		Mode:        mode,
-		OutputDir:   filepath.Join(".", "initial_imports"),
-		WorkerCount: workerCount,
-		ChunkSize:   chunkSize,
+		Mode:          mode,
+		OutputDir:     filepath.Join(".", "initial_imports"),
+		WorkerCount:   workerCount,
+		ChunkSize:     chunkSize,
+		StampSyncTime: stampSyncTime,
 	}
 
 	deps := etl.Dependencies{

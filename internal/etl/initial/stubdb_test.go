@@ -2,8 +2,8 @@ package initial
 
 // stubDB stands in for database.Adapter in tests that need *sql.Rows without a server.
 // database.Adapter.QueryRows returns a concrete *sql.Rows, so the stub is a minimal database/sql driver
-// (connector, conn, rows) whose rows come from a Go function. Exec, transactions and prepared statements
-// are not supported.
+// (connector, conn, rows) whose rows come from a Go function. Exec is answered by an optional second function
+// (withExec) and fails without one; transactions and prepared statements are not supported.
 //
 // Ported from internal/etl/incremental/parity_stubdb_test.go (blob 396b66d, last changed in 79a38f0,
 // removed with the incremental mode), without the incremental-only helpers stringsArg and nullable.
@@ -26,14 +26,23 @@ type stubResult struct {
 
 type stubQueryFunc func(query string, args []driver.NamedValue) (stubResult, error)
 
+// stubExecFunc answers Exec with the number of rows affected.
+type stubExecFunc func(query string, args []any) (int64, error)
+
 type stubDB struct {
-	db *sql.DB
+	db   *sql.DB
+	exec stubExecFunc
 }
 
 var _ database.Adapter = (*stubDB)(nil)
 
 func newStubDB(fn stubQueryFunc) *stubDB {
 	return &stubDB{db: sql.OpenDB(&stubConnector{fn: fn})}
+}
+
+func (s *stubDB) withExec(fn stubExecFunc) *stubDB {
+	s.exec = fn
+	return s
 }
 
 func (s *stubDB) QueryRows(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
@@ -47,8 +56,15 @@ func (s *stubDB) FetchRow(context.Context, any, string, ...any) error { return e
 func (s *stubDB) BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error) {
 	return nil, errStub("BeginTx")
 }
-func (s *stubDB) Exec(context.Context, string, ...any) (sql.Result, error) {
-	return nil, errStub("Exec")
+func (s *stubDB) Exec(_ context.Context, query string, args ...any) (sql.Result, error) {
+	if s.exec == nil {
+		return nil, errStub("Exec")
+	}
+	n, err := s.exec(query, args)
+	if err != nil {
+		return nil, err
+	}
+	return driver.RowsAffected(n), nil
 }
 func (s *stubDB) Ping(context.Context) error { return nil }
 func (s *stubDB) HealthCheck() error         { return nil }

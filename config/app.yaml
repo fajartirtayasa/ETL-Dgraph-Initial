@@ -31,6 +31,9 @@ db_clean_replica:
   timeout_second: 10 # database timeout in second
   charset: "utf8" # database charset
 
+initial:
+  stamp_sync_time: "true" # after the RDF is written, set sync_time = NOW() on the exported valid rows still NULL; "false" skips it, blank means "true", anything else is rejected at startup
+
 aws:
   s3:
     region: "ap-southeast-1" # AWS region
