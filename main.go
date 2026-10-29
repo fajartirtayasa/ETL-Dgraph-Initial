@@ -18,6 +18,9 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// applicationName identifies this binary's PostgreSQL sessions (application_name in pg_stat_activity).
+const applicationName = "etl_dgraph_initial"
+
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "etl failed: %v\n", err)
@@ -143,5 +146,6 @@ func toDatabaseConfig(cfg *app.PostgresConfig) *database.Config {
 		MaxLifeTimeMS:     cfg.MaxLifeTimeMS,
 		TimeoutSecond:     cfg.TimeoutSecond,
 		Charset:           cfg.Charset,
+		ApplicationName:   applicationName,
 	}
 }

@@ -17,6 +17,9 @@ type Config struct {
 	MaxLifeTimeMS     int
 	TimeoutSecond     int
 	Charset           string
+	// ApplicationName is sent as application_name on every connection, so the sessions show it in pg_stat_activity.
+	// Empty leaves it unset.
+	ApplicationName string
 }
 
 type DatabaseDriver string

@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"net/url"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -9,18 +10,7 @@ import (
 )
 
 func NewConnectionPostgres(config *Config) (*sqlx.DB, error) {
-	connectionString := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable&search_path=%s&connect_timeout=%d&client_encoding=%s",
-		config.User,
-		config.Password,
-		config.Host,
-		config.Port,
-		config.Name,
-		config.Schema,
-		config.TimeoutSecond,
-		config.Charset,
-	)
-
-	db, err := sqlx.Open("pgx", connectionString)
+	db, err := sqlx.Open("pgx", postgresConnectionString(config))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open postgres connection: %w", err)
 	}
@@ -35,4 +25,23 @@ func NewConnectionPostgres(config *Config) (*sqlx.DB, error) {
 	}
 
 	return db, nil
+}
+
+func postgresConnectionString(config *Config) string {
+	connectionString := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable&search_path=%s&connect_timeout=%d&client_encoding=%s",
+		config.User,
+		config.Password,
+		config.Host,
+		config.Port,
+		config.Name,
+		config.Schema,
+		config.TimeoutSecond,
+		config.Charset,
+	)
+
+	if config.ApplicationName != "" {
+		connectionString += "&application_name=" + url.QueryEscape(config.ApplicationName)
+	}
+
+	return connectionString
 }
